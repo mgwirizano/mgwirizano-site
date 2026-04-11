@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mgwirizano Watsopano — Unity · Benevolence · Support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0a1a2e;
+  --navy2: #1a3a5e;
+  --green: #217B31;
+  --green2: #1a6228;
+  --green3: #eaf5ed;
+  --red: #D52321;
+  --gold: #D68B0C;
+  --gold2: #fff8e1;
+  --white: #ffffff;
+  --off: #f8f6f2;
+  --gray: #f0f0f0;
+  --dgray: #555555;
+  --text: #1a1a1a;
+  --light: #a8d880;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--white);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+/* ── NAVIGATION ─────────────────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(10,26,46,0.97);
+  backdrop-filter: blur(12px);
+  border-bottom: 2px solid var(--red);
+  padding: 0 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 70px;
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 12px;
+}
+.nav-logo {
+  width: 42px; height: 42px; border-radius: 50%;
+  overflow: hidden; border: 2px solid var(--red);
+  box-shadow: 0 0 0 2px var(--navy), 0 0 0 4px var(--green);
+  flex-shrink: 0;
+}
+.nav-logo img { width: 100%; height: 100%; object-fit: cover; }
+.nav-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--white); letter-spacing: 1px;
+  line-height: 1.2;
+}
+.nav-tagline { font-size: 10px; color: var(--light); letter-spacing: 2px; text-transform: uppercase; }
+.nav-links { display: flex; gap: 6px; }
+.nav-links a {
+  color: rgba(255,255,255,0.75);
+  text-decoration: none; font-size: 13px;
+  font-weight: 500; padding: 6px 12px;
+  border-radius: 6px; transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.nav-links a:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+.nav-links a.active { background: var(--green); color: var(--white); }
+.nav-cta {
+  background: var(--red); color: var(--white) !important;
+  border-radius: 8px; font-weight: 600 !important;
+  padding: 8px 18px !important;
+}
+.nav-cta:hover { background: #b51e1c !important; }
+
+/* ── PAGE SYSTEM ─────────────────────────────────────────── */
+.page { display: none; padding-top: 70px; min-height: 100vh; }
+.page.active { display: block; }
+
+/* ── HERO ────────────────────────────────────────────────── */
+.hero {
+  background: var(--navy);
+  min-height: calc(100vh - 70px);
+  display: grid; grid-template-columns: 1fr 1fr;
+  align-items: center; position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 70% 50%, rgba(33,123,49,0.15) 0%, transparent 60%),
+              radial-gradient(ellipse at 20% 80%, rgba(213,35,33,0.1) 0%, transparent 50%);
+}
+.hero-left { padding: 80px 60px 80px 80px; position: relative; z-index: 1; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(33,123,49,0.2); border: 1px solid rgba(33,123,49,0.4);
+  color: var(--light); font-size: 11px; letter-spacing: 3px;
+  text-transform: uppercase; padding: 6px 16px; border-radius: 20px;
+  margin-bottom: 28px;
+}
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(38px, 4vw, 58px);
+  font-weight: 900; color: var(--white);
+  line-height: 1.1; margin-bottom: 12px;
+}
+.hero-title span { color: var(--light); }
+.hero-subtitle {
+  font-size: 18px; color: rgba(255,255,255,0.6);
+  letter-spacing: 3px; text-transform: uppercase;
+  margin-bottom: 24px; font-weight: 300;
+}
+.hero-divider {
+  width: 60px; height: 3px; background: var(--red);
+  margin-bottom: 28px;
+}
+.hero-desc {
+  font-size: 17px; color: rgba(255,255,255,0.75);
+  line-height: 1.8; margin-bottom: 40px;
+  max-width: 480px;
+}
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--green); color: var(--white);
+  padding: 14px 28px; border-radius: 10px;
+  font-size: 15px; font-weight: 600;
+  text-decoration: none; border: none; cursor: pointer;
+  transition: all 0.2s; display: inline-flex;
+  align-items: center; gap: 8px;
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-primary:hover { background: var(--green2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(33,123,49,0.3); }
+.btn-secondary {
+  background: transparent; color: var(--white);
+  padding: 14px 28px; border-radius: 10px;
+  font-size: 15px; font-weight: 500;
+  text-decoration: none; border: 1px solid rgba(255,255,255,0.3);
+  cursor: pointer; transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.5); }
+.hero-right {
+  padding: 80px; display: flex; justify-content: center;
+  align-items: center; position: relative; z-index: 1;
+}
+.hero-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px; padding: 40px;
+  width: 100%; max-width: 380px;
+  backdrop-filter: blur(10px);
+}
+.hero-card-title {
+  font-family: 'Playfair Display', serif;
+  color: var(--white); font-size: 20px;
+  margin-bottom: 28px; text-align: center;
+}
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+.stat-item {
+  background: rgba(255,255,255,0.06);
+  border-radius: 12px; padding: 16px;
+  text-align: center;
+}
+.stat-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px; font-weight: 700;
+  color: var(--light);
+}
+.stat-label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+.hero-values { display: flex; flex-direction: column; gap: 10px; }
+.value-item {
+  display: flex; align-items: center; gap: 12px;
+  color: rgba(255,255,255,0.75); font-size: 14px;
+}
+.value-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── SECTION HEADERS ─────────────────────────────────────── */
+.section-header {
+  text-align: center; margin-bottom: 60px;
+}
+.section-label {
+  font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--green); font-weight: 600; margin-bottom: 12px;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(28px, 3vw, 42px);
+  font-weight: 700; color: var(--navy);
+  line-height: 1.2; margin-bottom: 16px;
+}
+.section-desc {
+  font-size: 17px; color: var(--dgray);
+  max-width: 600px; margin: 0 auto; line-height: 1.7;
+}
+
+/* ── HOW IT WORKS ────────────────────────────────────────── */
+.how-section {
+  padding: 100px 80px; background: var(--off);
+}
+.steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; }
+.step-card {
+  background: var(--white); border-radius: 16px;
+  padding: 32px 24px; text-align: center;
+  position: relative; overflow: hidden;
+  transition: transform 0.3s;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.step-card:hover { transform: translateY(-6px); }
+.step-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px; font-weight: 900;
+  color: rgba(33,123,49,0.12); position: absolute;
+  top: 12px; right: 16px; line-height: 1;
+}
+.step-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; margin: 0 auto 18px;
+}
+.step-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 700;
+  color: var(--navy); margin-bottom: 10px;
+}
+.step-desc { font-size: 14px; color: var(--dgray); line-height: 1.7; }
+
+/* ── VALUES ──────────────────────────────────────────────── */
+.values-section {
+  padding: 100px 80px; background: var(--navy);
+}
+.values-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+.value-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 36px;
+  transition: all 0.3s;
+}
+.value-card:hover { background: rgba(255,255,255,0.08); transform: translateY(-4px); }
+.value-icon { font-size: 36px; margin-bottom: 16px; }
+.value-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; color: var(--white);
+  margin-bottom: 12px;
+}
+.value-desc { font-size: 15px; color: rgba(255,255,255,0.65); line-height: 1.7; }
+
+/* ── STRIPE BAR ──────────────────────────────────────────── */
+.stripe { height: 6px; display: flex; }
+.stripe div { flex: 1; }
+
+/* ── CARDS / INFO ────────────────────────────────────────── */
+.info-section { padding: 100px 80px; background: var(--white); }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+.info-text .label { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: var(--green); font-weight: 600; margin-bottom: 16px; }
+.info-text h2 { font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 700; color: var(--navy); line-height: 1.2; margin-bottom: 20px; }
+.info-text p { font-size: 16px; color: var(--dgray); line-height: 1.8; margin-bottom: 16px; }
+.info-list { list-style: none; }
+.info-list li {
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: 15px; color: var(--text); padding: 10px 0;
+  border-bottom: 1px solid var(--gray);
+}
+.info-list li:last-child { border-bottom: none; }
+.check { color: var(--green); font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.info-visual {
+  background: var(--navy); border-radius: 20px;
+  padding: 40px; position: relative; overflow: hidden;
+}
+.info-visual::before {
+  content: '';
+  position: absolute; top: -40px; right: -40px;
+  width: 200px; height: 200px; border-radius: 50%;
+  background: rgba(33,123,49,0.15);
+}
+.info-stat-big {
+  font-family: 'Playfair Display', serif;
+  font-size: 72px; font-weight: 900; color: var(--light);
+  line-height: 1; margin-bottom: 8px;
+}
+.info-stat-label { font-size: 14px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 32px; }
+.mini-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.mini-stat { background: rgba(255,255,255,0.07); border-radius: 12px; padding: 16px; }
+.mini-stat-n { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--white); }
+.mini-stat-l { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+/* ── MEMBER PORTAL ───────────────────────────────────────── */
+.portal-section { padding: 100px 80px; background: var(--off); }
+.portal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+.portal-form {
+  background: var(--white); border-radius: 20px;
+  padding: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+.portal-form h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px; color: var(--navy); margin-bottom: 8px;
+}
+.portal-form p { font-size: 14px; color: var(--dgray); margin-bottom: 28px; line-height: 1.6; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--navy); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 12px 16px;
+  border: 2px solid var(--gray); border-radius: 10px;
+  font-size: 15px; font-family: 'DM Sans', sans-serif;
+  outline: none; transition: border 0.2s;
+  background: var(--white); color: var(--text);
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--green); }
+.form-group.member-id input {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px; letter-spacing: 4px;
+  text-transform: uppercase;
+}
+.btn-form {
+  width: 100%; padding: 14px;
+  background: var(--green); color: var(--white);
+  border: none; border-radius: 10px; font-size: 16px;
+  font-weight: 600; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.2s;
+}
+.btn-form:hover { background: var(--green2); }
+.portal-features { display: flex; flex-direction: column; gap: 20px; }
+.portal-feature {
+  background: var(--white); border-radius: 16px;
+  padding: 24px; display: flex; gap: 18px;
+  align-items: flex-start;
+  border-left: 4px solid transparent;
+  transition: all 0.2s;
+}
+.portal-feature:hover { border-left-color: var(--green); transform: translateX(4px); }
+.portal-feature-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.portal-feature-text h4 { font-size: 16px; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+.portal-feature-text p { font-size: 13px; color: var(--dgray); line-height: 1.6; }
+
+/* ── FAQ ─────────────────────────────────────────────────── */
+.faq-section { padding: 100px 80px; background: var(--white); }
+.faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1000px; margin: 0 auto; }
+.faq-item {
+  background: var(--off); border-radius: 14px;
+  padding: 24px; cursor: pointer; transition: all 0.2s;
+  border: 1px solid transparent;
+}
+.faq-item:hover { border-color: var(--green); background: var(--green3); }
+.faq-q {
+  font-size: 15px; font-weight: 600; color: var(--navy);
+  margin-bottom: 10px; display: flex; justify-content: space-between;
+  align-items: flex-start; gap: 12px;
+}
+.faq-a { font-size: 14px; color: var(--dgray); line-height: 1.7; }
+
+/* ── LEADERSHIP ──────────────────────────────────────────── */
+.leadership-section { padding: 100px 80px; background: var(--off); }
+.leaders-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; max-width: 900px; margin: 0 auto; }
+.leader-card {
+  background: var(--white); border-radius: 20px;
+  padding: 36px 28px; text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  transition: transform 0.3s;
+}
+.leader-card:hover { transform: translateY(-6px); }
+.leader-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: var(--navy); margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; font-weight: 700; color: var(--light);
+  border: 3px solid var(--red);
+  box-shadow: 0 0 0 3px var(--navy), 0 0 0 5px var(--green);
+}
+.leader-name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+.leader-role {
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--green); font-weight: 600; margin-bottom: 14px;
+}
+.leader-desc { font-size: 13px; color: var(--dgray); line-height: 1.6; }
+.contact-box {
+  background: var(--navy); border-radius: 20px;
+  padding: 48px; text-align: center;
+  max-width: 700px; margin: 60px auto 0;
+}
+.contact-box h3 { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--white); margin-bottom: 12px; }
+.contact-box p { font-size: 16px; color: rgba(255,255,255,0.7); margin-bottom: 28px; }
+.contact-email {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px; color: var(--light);
+  background: rgba(255,255,255,0.08);
+  padding: 14px 28px; border-radius: 10px;
+  display: inline-block; margin-bottom: 24px;
+  letter-spacing: 1px;
+}
+
+/* ── CONSTITUTION / RESOURCES PAGE ──────────────────────── */
+.resources-section { padding: 100px 80px; background: var(--white); }
+.doc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.doc-card {
+  background: var(--off); border-radius: 16px;
+  padding: 28px; border: 1px solid var(--gray);
+  transition: all 0.25s; text-decoration: none;
+  display: block;
+}
+.doc-card:hover { background: var(--green3); border-color: var(--green); transform: translateY(-4px); }
+.doc-icon { font-size: 36px; margin-bottom: 14px; }
+.doc-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+.doc-desc { font-size: 13px; color: var(--dgray); line-height: 1.6; }
+.doc-tag { display: inline-block; margin-top: 14px; font-size: 11px; font-weight: 600; color: var(--green); text-transform: uppercase; letter-spacing: 1px; }
+
+/* ── REPORTS PAGE ────────────────────────────────────────── */
+.reports-section { padding: 100px 80px; background: var(--off); }
+.report-list { max-width: 800px; margin: 0 auto; }
+.report-item {
+  background: var(--white); border-radius: 14px;
+  padding: 24px 28px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 20px;
+  border: 1px solid var(--gray); transition: all 0.2s;
+}
+.report-item:hover { border-color: var(--green); transform: translateX(4px); }
+.report-month {
+  background: var(--navy); color: var(--white);
+  border-radius: 10px; padding: 10px 14px;
+  text-align: center; min-width: 70px; flex-shrink: 0;
+}
+.report-month-name { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }
+.report-month-year { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; }
+.report-info { flex: 1; }
+.report-title { font-size: 16px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+.report-meta { font-size: 13px; color: var(--dgray); }
+.report-badge {
+  font-size: 11px; font-weight: 600;
+  padding: 4px 12px; border-radius: 12px;
+}
+.badge-new { background: var(--green3); color: var(--green); }
+.badge-prev { background: var(--gray); color: var(--dgray); }
+.transparency-banner {
+  background: var(--navy); border-radius: 16px;
+  padding: 40px; text-align: center; margin-bottom: 50px;
+}
+.transparency-banner h3 { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--white); margin-bottom: 10px; }
+.transparency-banner p { font-size: 15px; color: rgba(255,255,255,0.7); margin-bottom: 20px; line-height: 1.7; }
+.trans-stats { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
+.trans-stat { text-align: center; }
+.trans-stat-n { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: var(--light); }
+.trans-stat-l { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+
+/* ── FOOTER ──────────────────────────────────────────────── */
+footer {
+  background: var(--navy); color: var(--white);
+  padding: 60px 80px 30px;
+}
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+.footer-brand { }
+.footer-logo-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.footer-logo { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; border: 2px solid var(--red); }
+.footer-logo img { width: 100%; height: 100%; object-fit: cover; }
+.footer-name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; }
+.footer-tagline-full { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.7; margin-bottom: 20px; }
+.footer-values { display: flex; gap: 8px; flex-wrap: wrap; }
+.footer-val { font-size: 11px; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 10px; color: rgba(255,255,255,0.6); }
+.footer-col h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--light); margin-bottom: 16px; font-weight: 600; }
+.footer-col ul { list-style: none; }
+.footer-col ul li { margin-bottom: 10px; }
+.footer-col ul li a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; transition: color 0.2s; }
+.footer-col ul li a:hover { color: var(--white); }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 24px; display: flex;
+  justify-content: space-between; align-items: center;
+  font-size: 13px; color: rgba(255,255,255,0.4);
+}
+
+/* ── HERO STRIPE ─────────────────────────────────────────── */
+.color-stripe {
+  height: 5px; display: flex;
+}
+.color-stripe div { flex: 1; }
+
+/* ── MOBILE ──────────────────────────────────────────────── */
+/* ── HAMBURGER BUTTON ──────────────────────────── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  margin-left: auto;
+}
+.hamburger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--white);
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── MOBILE DRAWER ─────────────────────────────── */
+.mobile-drawer {
+  display: none;
+  position: fixed;
+  top: 70px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--navy);
+  z-index: 999;
+  flex-direction: column;
+  padding: 20px;
+  gap: 6px;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+.mobile-drawer.open {
+  transform: translateX(0);
+}
+.mobile-drawer a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+  font-size: 17px;
+  font-weight: 500;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.07);
+  transition: all 0.2s;
+}
+.mobile-drawer a:hover,
+.mobile-drawer a.active {
+  background: rgba(255,255,255,0.08);
+  color: var(--white);
+  border-color: rgba(255,255,255,0.15);
+}
+.mobile-drawer a .m-icon {
+  font-size: 20px;
+  width: 32px;
+  text-align: center;
+}
+.mobile-drawer .m-cta {
+  background: var(--green) !important;
+  color: var(--white) !important;
+  border-color: var(--green) !important;
+  font-weight: 700 !important;
+  margin-top: 8px;
+}
+.mobile-drawer .m-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 8px 0;
+}
+
+/* ── BACK BUTTON (appears on all non-home pages) ─ */
+.back-bar {
+  display: none;
+  background: var(--navy);
+  padding: 10px 20px;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  position: sticky;
+  top: 70px;
+  z-index: 90;
+}
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255,255,255,0.7);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.back-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--white);
+}
+.back-bar .current-page {
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+  margin-left: auto;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+/* ── BOTTOM NAV BAR (mobile) ─────────────────── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--navy);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding: 8px 4px 12px;
+  z-index: 200;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 10px;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+  flex: 1;
+}
+.bottom-nav-item .bn-icon { font-size: 20px; }
+.bottom-nav-item .bn-label {
+  font-size: 9px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.5px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+}
+.bottom-nav-item.active .bn-label { color: var(--light); }
+.bottom-nav-item.active .bn-icon { filter: drop-shadow(0 0 4px rgba(168,216,128,0.5)); }
+.bottom-nav-item:active { background: rgba(255,255,255,0.07); }
+
+@media(max-width: 900px) {
+  nav { padding: 0 16px; }
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  .mobile-drawer { display: flex; }
+  .back-bar { display: flex; }
+  .bottom-nav { display: flex; }
+  .hero { grid-template-columns: 1fr; }
+  .hero-left { padding: 60px 24px; }
+  .hero-right { display: none; }
+  .how-section, .values-section, .info-section,
+  .portal-section, .faq-section, .leadership-section,
+  .resources-section, .reports-section { padding: 60px 20px 80px; }
+  .steps-grid, .values-grid { grid-template-columns: 1fr; gap: 20px; }
+  .info-grid, .portal-grid, .faq-grid { grid-template-columns: 1fr; }
+  .leaders-grid { grid-template-columns: 1fr; max-width: 360px; }
+  .doc-grid { grid-template-columns: 1fr 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .footer { padding: 40px 24px 100px; }
+  .page { padding-bottom: 70px; }
+}
+
+/* ── ANIMATIONS ──────────────────────────────────────────── */
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
+.page.active .hero-left, .page.active .section-header { animation: fadeUp 0.6s ease both; }
+</style>
+</head>
+<body>
+
+<div class="color-stripe">
+  <div style="background:#D52321"></div>
+  <div style="background:#217B31"></div>
+  <div style="background:#0a1a2e"></div>
+</div>
+
+<!-- NAVIGATION -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">
+      <img src="https://lh3.googleusercontent.com/d/1S3eEVjZY5yTfOXadnZfYU-1xbWGrykeP" alt="MW Logo"/>
+    </div>
+    <div>
+      <div class="nav-name">Mgwirizano Watsopano</div>
+      <div class="nav-tagline">Unity · Benevolence · Support</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="#" onclick="show('home')" class="active" id="nav-home">Home</a>
+    <a href="#" onclick="show('portal')" id="nav-portal">Member Portal</a>
+    <a href="#" onclick="show('join')" id="nav-join">Join Us</a>
+    <a href="#" onclick="show('resources')" id="nav-resources">Resources</a>
+    <a href="#" onclick="show('reports')" id="nav-reports">Reports</a>
+    <a href="#" onclick="show('contact')" id="nav-contact">Contact</a>
+    <a href="#" onclick="show('join')" class="nav-cta">Register Now</a>
+  </div>
+  <!-- Hamburger button — mobile only -->
+  <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile full-screen drawer -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <a href="#" onclick="show('home');closeMenu()" id="m-nav-home">
+    <span class="m-icon">🏠</span> Home
+  </a>
+  <a href="#" onclick="show('portal');closeMenu()" id="m-nav-portal">
+    <span class="m-icon">📊</span> Member Portal
+  </a>
+  <a href="#" onclick="show('join');closeMenu()" id="m-nav-join">
+    <span class="m-icon">📝</span> Join Us
+  </a>
+  <a href="#" onclick="show('resources');closeMenu()" id="m-nav-resources">
+    <span class="m-icon">📖</span> Resources & FAQ
+  </a>
+  <a href="#" onclick="show('reports');closeMenu()" id="m-nav-reports">
+    <span class="m-icon">📈</span> Financial Reports
+  </a>
+  <a href="#" onclick="show('contact');closeMenu()" id="m-nav-contact">
+    <span class="m-icon">👥</span> Contact Leadership
+  </a>
+  <div class="m-divider"></div>
+  <a href="#" onclick="show('join');closeMenu()" class="m-cta">
+    <span class="m-icon">✅</span> Register Now — Free
+  </a>
+</div>
+
+<!-- Back bar — shows on non-home pages, mobile only -->
+<div class="back-bar" id="backBar">
+  <button class="back-btn" onclick="goBack()">← Back</button>
+  <span class="current-page" id="currentPageLabel"></span>
+</div>
+
+<!-- Bottom navigation bar — mobile only -->
+<div class="bottom-nav">
+  <button class="bottom-nav-item active" id="bn-home" onclick="show('home')">
+    <span class="bn-icon">🏠</span>
+    <span class="bn-label">Home</span>
+  </button>
+  <button class="bottom-nav-item" id="bn-portal" onclick="show('portal')">
+    <span class="bn-icon">📊</span>
+    <span class="bn-label">My Status</span>
+  </button>
+  <button class="bottom-nav-item" id="bn-join" onclick="show('join')">
+    <span class="bn-icon">📝</span>
+    <span class="bn-label">Join</span>
+  </button>
+  <button class="bottom-nav-item" id="bn-resources" onclick="show('resources')">
+    <span class="bn-icon">📖</span>
+    <span class="bn-label">Resources</span>
+  </button>
+  <button class="bottom-nav-item" id="bn-contact" onclick="show('contact')">
+    <span class="bn-icon">👥</span>
+    <span class="bn-label">Contact</span>
+  </button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- HOME PAGE -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-home">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-badge">
+        <span style="width:6px;height:6px;background:#a8d880;border-radius:50%;display:inline-block"></span>
+        Est. 2026 · Malawian Heritage · United States
+      </div>
+      <div class="hero-subtitle">Unity · Benevolence · Support</div>
+      <h1 class="hero-title">
+        Standing Together<br>
+        <span>In Every Season</span><br>
+        of Life
+      </h1>
+      <div class="hero-divider"></div>
+      <p class="hero-desc">
+        Mgwirizano Watsopano is a mutual aid society for Malawians in the United States. 
+        When loss visits one of us, the strength of our entire community lifts them up.
+        Transparent. Professional. Built to last.
+      </p>
+      <div class="hero-actions">
+        <a href="#" onclick="show('join')" class="btn-primary">Join Our Family →</a>
+        <a href="#" onclick="show('portal'); return false;" class="btn-secondary">Check My Status</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-card">
+        <div class="hero-card-title">Our Community</div>
+        <div class="stat-grid">
+          <div class="stat-item">
+            <div class="stat-num">Growing</div>
+            <div class="stat-label">Community</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">$10</div>
+            <div class="stat-label">Per Fund</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">100%</div>
+            <div class="stat-label">Transparent</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">24hr</div>
+            <div class="stat-label">Response</div>
+          </div>
+        </div>
+        <div class="hero-values">
+          <div class="value-item"><div class="value-dot" style="background:#a8d880"></div> Biological family coverage only</div>
+          <div class="value-item"><div class="value-dot" style="background:#D52321"></div> Quarterly financial statements</div>
+          <div class="value-item"><div class="value-dot" style="background:#D68B0C"></div> Automatic payment confirmations</div>
+          <div class="value-item"><div class="value-dot" style="background:#a8d880"></div> Democratic elections every 2 years</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-section">
+    <div class="section-header">
+      <div class="section-label">Simple Process</div>
+      <h2 class="section-title">How Mgwirizano Watsopano Works</h2>
+      <p class="section-desc">From joining to being supported — everything is automated, transparent, and designed for your peace of mind.</p>
+    </div>
+    <div class="steps-grid">
+      <a href="/register.html" target="_blank" style="text-decoration:none;color:inherit;display:block;">
+      <div class="step-card" style="cursor:pointer;border:2px solid var(--green);">
+        <div class="step-num">01</div>
+        <div class="step-icon" style="background:#eaf5ed">📝</div>
+        <div class="step-title" style="color:var(--green);">Register →</div>
+        <div class="step-desc">Fill in the membership form. You receive your unique Member ID by email within minutes. Founding members qualify immediately — no grace period.</div>
+      </div>
+      </a>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-icon" style="background:#fff3f3">💸</div>
+        <div class="step-title">Activate</div>
+        <div class="step-desc">Pay the $25 registration fee via Zelle. Automatic confirmation within minutes. No screenshots needed.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-icon" style="background:#fff8e1">🤝</div>
+        <div class="step-title">Contribute</div>
+        <div class="step-desc">When a member experiences a loss, you contribute $10 per fund. Fully automated reminders and confirmations.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div class="step-icon" style="background:#e8edf2">🙏</div>
+        <div class="step-title">Be Supported</div>
+        <div class="step-desc">When you experience a loss, your entire community stands with you. Funds disbursed promptly after the fund closes.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VALUES -->
+  <section class="values-section">
+    <div class="section-header">
+      <div class="section-label" style="color:var(--light)">Our Foundation</div>
+      <h2 class="section-title" style="color:var(--white)">Built on Principles That Last</h2>
+      <p class="section-desc" style="color:rgba(255,255,255,0.65)">We are not just another group. We are a professionally governed, transparently managed community built to serve you for generations.</p>
+    </div>
+    <div class="values-grid">
+      <div class="value-card">
+        <div class="value-icon">🌍</div>
+        <div class="value-name">Unity</div>
+        <div class="value-desc">We are stronger together than apart. Members across the United States, united by Malawian heritage and mutual care.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">💚</div>
+        <div class="value-name">Benevolence</div>
+        <div class="value-desc">We give without expectation. Every $10 contribution is an act of love for a community member in their darkest hour.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🛡️</div>
+        <div class="value-name">Transparency</div>
+        <div class="value-desc">Quarterly financial statements. Open books. Every dollar accounted for. No secrets — ever.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">⚖️</div>
+        <div class="value-name">Accountability</div>
+        <div class="value-desc">Democratic elections. A written constitution. An independent annual review. Leaders accountable to members.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">⚡</div>
+        <div class="value-name">Technology</div>
+        <div class="value-desc">Fully automated payments, confirmations, and reminders. No manual spreadsheets. No chasing admins.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🙏</div>
+        <div class="value-name">Dignity</div>
+        <div class="value-desc">Every member treated with respect. Grief handled with care. Questions welcomed. Voices always heard.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INFO SECTION -->
+  <section class="info-section">
+    <div class="info-grid">
+      <div class="info-text">
+        <div class="label">Why Choose Us</div>
+        <h2>A Different Kind of Community</h2>
+        <p>We studied what goes wrong in mutual aid groups and built Mgwirizano Watsopano to be the opposite — in every way that matters to you.</p>
+        <ul class="info-list">
+          <li><span class="check">✓</span><span>Automatic payment confirmation — no screenshots ever</span></li>
+          <li><span class="check">✓</span><span>Quarterly financial statements published proactively</span></li>
+          <li><span class="check">✓</span><span>Full constitution shared with every member</span></li>
+          <li><span class="check">✓</span><span>Democratic elections every 2 years</span></li>
+          <li><span class="check">✓</span><span>24-hour response commitment to all queries</span></li>
+          <li><span class="check">✓</span><span>Self-service member portal — check your status anytime</span></li>
+          <li><span class="check">✓</span><span>Every member's voice protected and welcomed</span></li>
+        </ul>
+      </div>
+      <div class="info-visual">
+        <div class="info-stat-big">95%</div>
+        <div class="info-stat-label">Of every fund goes directly to the family</div>
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <div class="mini-stat-n">15 min</div>
+            <div class="mini-stat-l">Payment confirmation</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-n">24 hr</div>
+            <div class="mini-stat-l">Query response</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-n">1st</div>
+            <div class="mini-stat-l">Quarterly report</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-n">5%</div>
+            <div class="mini-stat-l">Admin fund only</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- MEMBER PORTAL PAGE -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="page" id="page-portal">
+  <section class="portal-section">
+    <div class="section-header">
+      <div class="section-label">Self-Service</div>
+      <h2 class="section-title">Member Portal</h2>
+      <p class="section-desc">Check your balance, payment history, and fund status anytime — no need to contact anyone.</p>
+    </div>
+    <div class="portal-grid">
+      <div class="portal-form">
+        <h3>Check Your Status</h3>
+        <p>Enter your Member ID to view your complete membership status, payment history, and active funeral funds.</p>
+        <div class="form-group member-id">
+          <label>Your Member ID</label>
+          <input type="text" placeholder="MW0001" maxlength="6" id="portalId" oninput="this.value=this.value.toUpperCase()"/>
+        </div>
+        <button class="btn-form" onclick="openPortal()">Check My Status →</button>
+        <p style="font-size:12px;color:var(--dgray);margin-top:16px;text-align:center;">Your Member ID was sent to your email when you registered. Check your inbox for a welcome email from admin@mgwirizano.net</p>
+      </div>
+      <div class="portal-features">
+        <div class="portal-feature">
+          <div class="portal-feature-icon" style="background:#eaf5ed">💰</div>
+          <div class="portal-feature-text">
+            <h4>Your Balance</h4>
+            <p>See exactly what you owe for registration and any active funeral funds. Includes prior contribution credits.</p>
+          </div>
+        </div>
+        <div class="portal-feature">
+          <div class="portal-feature-icon" style="background:#fff8e1">📋</div>
+          <div class="portal-feature-text">
+            <h4>Payment History</h4>
+            <p>Full record of every payment you have made — dates, amounts, and what each was for.</p>
+          </div>
+        </div>
+        <div class="portal-feature">
+          <div class="portal-feature-icon" style="background:#e8edf2">🎯</div>
+          <div class="portal-feature-text">
+            <h4>Fund Status</h4>
+            <p>See every funeral fund — whether you have paid, are pending, or are exempt from each one.</p>
+          </div>
+        </div>
+        <div class="portal-feature">
+          <div class="portal-feature-icon" style="background:#fff3f3">📊</div>
+          <div class="portal-feature-text">
+            <h4>Eligibility Status</h4>
+            <p>Know immediately whether you are eligible, at risk, or need to take action to protect your benefits.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHATBOT EMBED -->
+  <section style="padding: 0 80px 100px; background: var(--off);">
+    <div class="section-header">
+      <div class="section-label">Instant Help</div>
+      <h2 class="section-title">Ask Our Help Assistant</h2>
+      <p class="section-desc">Get instant answers to any question about your membership — available 24/7.</p>
+    </div>
+    <div style="max-width:680px;margin:0 auto;background:var(--white);border-radius:20px;padding:40px;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+      <p style="font-size:15px;color:var(--dgray);margin-bottom:20px;line-height:1.7;">Our Help Centre chatbot can answer questions about your balance, how to pay, funeral funds, eligibility, and more — in real time, any time of day.</p>
+      <a href="https://script.google.com/macros/s/AKfycbwyZejHw475lEKJitdrcQVvCz2enKCtPVZO35_qBv6t_nWI8JapUHwh6zi2vZxwh2FSng/exec?page=help" target="_blank" class="btn-primary" style="display:inline-flex;">Open Help Centre →</a>
+    </div>
+  </section>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- JOIN PAGE -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="page" id="page-join">
+  <section style="padding:100px 80px;background:var(--white);">
+    <div class="section-header">
+      <div class="section-label">Welcome</div>
+      <h2 class="section-title">Join Mgwirizano Watsopano</h2>
+      <p class="section-desc">Become part of a community that stands with you. Registration takes less than 5 minutes.</p>
+    </div>
+
+    <!-- Steps -->
+    <div style="max-width:800px;margin:0 auto 60px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;">
+        <div style="background:var(--navy);border-radius:16px;padding:28px;text-align:center;">
+          <div style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--light);margin-bottom:12px;">1</div>
+          <div style="font-size:16px;font-weight:600;color:var(--white);margin-bottom:8px;">Fill the Form</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.6);">Complete your membership registration with your details and biological family information</div>
+        </div>
+        <div style="background:var(--green);border-radius:16px;padding:28px;text-align:center;">
+          <div style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:rgba(255,255,255,0.3);margin-bottom:12px;">2</div>
+          <div style="font-size:16px;font-weight:600;color:var(--white);margin-bottom:8px;">Get Your ID</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.8);">Receive your Member ID instantly by email with full payment instructions</div>
+        </div>
+        <div style="background:var(--off);border:2px solid var(--gray);border-radius:16px;padding:28px;text-align:center;">
+          <div style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--green);margin-bottom:12px;">3</div>
+          <div style="font-size:16px;font-weight:600;color:var(--navy);margin-bottom:8px;">Activate</div>
+          <div style="font-size:13px;color:var(--dgray);">Pay the $25 registration fee via Zelle. Automatic confirmation. You are officially a member.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registration Form Link -->
+    <div style="max-width:600px;margin:0 auto;background:var(--green3);border:2px solid var(--green);border-radius:20px;padding:48px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:16px;">📝</div>
+      <h3 style="font-family:'Playfair Display',serif;font-size:28px;color:var(--navy);margin-bottom:12px;">Ready to Join?</h3>
+      <p style="font-size:15px;color:var(--dgray);margin-bottom:28px;line-height:1.7;">Click the button below to open the membership registration form. Make sure you have your biological family details ready — this is required for benefit eligibility.</p>
+      <a href="/register.html" target="_blank" class="btn-primary" style="font-size:17px;padding:16px 36px;">Open Registration Form →</a>
+      <p style="font-size:12px;color:var(--dgray);margin-top:16px;">After submitting you will receive your Member ID by email within minutes</p>
+    </div>
+
+    <!-- Payment Instructions -->
+    <div style="max-width:700px;margin:48px auto 0;background:var(--navy);border-radius:20px;padding:40px;">
+      <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:var(--white);margin-bottom:24px;text-align:center;">After Registration — How to Pay</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:18px;">
+          <div style="font-size:11px;color:var(--light);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Method</div>
+          <div style="font-size:18px;font-weight:600;color:var(--white);">Zelle</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:18px;">
+          <div style="font-size:11px;color:var(--light);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Send To</div>
+          <div style="font-size:15px;font-weight:600;color:var(--light);font-family:'DM Mono',monospace;">mgwirizano2026@gmail.com</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border:2px dashed var(--red);border-radius:10px;padding:16px;text-align:center;margin-bottom:16px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:8px;">Zelle Memo (write exactly):</div>
+        <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--white);letter-spacing:2px;">[YOUR MEMBER ID] Registration Fee</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px;">Example: MW0001 Registration Fee</div>
+      </div>
+      <div style="background:var(--green3);border-radius:10px;padding:14px;text-align:center;">
+        <span style="font-size:14px;color:var(--green);font-weight:500;">✓ Automatic email confirmation within 15 minutes. No screenshots needed.</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- RESOURCES PAGE -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="page" id="page-resources">
+  <section class="resources-section">
+    <div class="section-header">
+      <div class="section-label">Member Resources</div>
+      <h2 class="section-title">Everything You Need</h2>
+      <p class="section-desc">All your membership documents, guides, and tools — in one place.</p>
+    </div>
+    <div class="doc-grid">
+      <a href="https://docs.google.com/document/d/1ecSUpW9bq4TQIhHYJNeZLeYEYbtMXnlo/edit?usp=sharing" target="_blank" class="doc-card">
+        <div class="doc-icon">📜</div>
+        <div class="doc-title">Constitution & Bylaws</div>
+        <div class="doc-desc">The complete governing document of Mgwirizano Watsopano — your rights, obligations, and how we operate.</div>
+        <div class="doc-tag">Download PDF →</div>
+      </a>
+      <a href="#" onclick="return false;" class="doc-card" style="opacity:0.65;cursor:default;">
+        <div class="doc-icon">📖</div>
+        <div class="doc-title">Member Guide</div>
+        <div class="doc-desc">Everything you need to know about your membership — explained clearly from A to Z.</div>
+        <div class="doc-tag">Coming Soon</div>
+      </a>
+      <a href="/register.html" target="_blank" class="doc-card">
+        <div class="doc-icon">📝</div>
+        <div class="doc-title">Registration Form</div>
+        <div class="doc-desc">Join Mgwirizano Watsopano. Receive your Member ID instantly after submitting.</div>
+        <div class="doc-tag">Open Form →</div>
+      </a>
+      <a href="/register.html" target="_blank" class="doc-card">
+        <div class="doc-icon">🔄</div>
+        <div class="doc-title">Update My Details</div>
+        <div class="doc-desc">Update your phone number, location, emergency contact — or report a bereavement.</div>
+        <div class="doc-tag">Open Form →</div>
+      </a>
+      <a href="https://script.google.com/macros/s/AKfycbwyZejHw475lEKJitdrcQVvCz2enKCtPVZO35_qBv6t_nWI8JapUHwh6zi2vZxwh2FSng/exec" target="_blank" class="doc-card">
+        <div class="doc-icon">📊</div>
+        <div class="doc-title">Member Portal</div>
+        <div class="doc-desc">Check your balance, payment history, fund status, and eligibility anytime.</div>
+        <div class="doc-tag">Open Portal →</div>
+      </a>
+      <a href="https://script.google.com/macros/s/AKfycbwyZejHw475lEKJitdrcQVvCz2enKCtPVZO35_qBv6t_nWI8JapUHwh6zi2vZxwh2FSng/exec?page=help" target="_blank" class="doc-card">
+        <div class="doc-icon">💬</div>
+        <div class="doc-title">Help Centre</div>
+        <div class="doc-desc">Get instant answers to any membership question — 24 hours a day, 7 days a week.</div>
+        <div class="doc-tag">Open Chatbot →</div>
+      </a>
+    </div>
+
+    <!-- FAQ -->
+    <div style="margin-top:80px;">
+      <div class="section-header">
+        <div class="section-label">Common Questions</div>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+      </div>
+      <div class="faq-grid">
+        <div class="faq-item">
+          <div class="faq-q">What is my Member ID and where do I find it?</div>
+          <div class="faq-a">Your Member ID was sent to your registered email when you joined. It looks like MW0001. You can also find it using the Member Portal or Help Centre chatbot.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">How do I make a payment?</div>
+          <div class="faq-a">All payments are made via Zelle to <strong>mgwirizano2026@gmail.com</strong>. Always include your Member ID in the memo — e.g. MW0001 Registration Fee or MW0001 FUND-001.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Why didn't I receive a payment confirmation?</div>
+          <div class="faq-a">Check your spam/junk folder for an email from <strong>mgwirizano2026@gmail.com</strong>. Confirmations are sent within 15 minutes. If nothing after 1 hour, email us with your Member ID and amount.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">What family members are covered?</div>
+          <div class="faq-a">Coverage is strictly biological: biological father, biological mother, legally married spouse, biological children, and biological siblings (including half-siblings who share at least one biological parent). Stepsiblings with no shared biological parent and adopted family members do not qualify.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">What happens if I miss contributions?</div>
+          <div class="faq-a">Missing 2 consecutive funds places you AT RISK. Missing 3 consecutive funds marks you INELIGIBLE. You can restore eligibility by contributing to the next 3 consecutive funds.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">How long until I receive the funeral fund money?</div>
+          <div class="faq-a">Funds are disbursed promptly after the fund closing date. 95% goes directly to the bereaved family. 5% is allocated to the Administration Fund for operating costs. A personal message from leadership accompanies every disbursement.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">How do I report a bereavement?</div>
+          <div class="faq-a">Use the Member Self-Service Form (linked above under Resources). Select "Report a Bereavement." You will receive an instant condolence email and be automatically exempted from active funds.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Where are the financial statements?</div>
+          <div class="faq-a">Quarterly financial statements are published on the Reports page every quarter. All disbursements, income, and balances are fully disclosed. No secrets, ever.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- REPORTS PAGE -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="page" id="page-reports">
+  <section class="reports-section">
+    <div class="section-header">
+      <div class="section-label">Full Transparency</div>
+      <h2 class="section-title">Financial Reports</h2>
+      <p class="section-desc">Every dollar in. Every dollar out. Published every quarter without fail.</p>
+    </div>
+
+    <div class="transparency-banner">
+      <h3>Our Transparency Commitment</h3>
+      <p>We publish financial statements proactively every month — not when asked, not when there is controversy, every single month. Every member has the right to see exactly how their contributions are managed.</p>
+      <div class="trans-stats">
+        <div class="trans-stat">
+          <div class="trans-stat-n">Quarterly</div>
+          <div class="trans-stat-l">Report frequency</div>
+        </div>
+        <div class="trans-stat">
+          <div class="trans-stat-n">100%</div>
+          <div class="trans-stat-l">Disclosed</div>
+        </div>
+        <div class="trans-stat">
+          <div class="trans-stat-n">Annual</div>
+          <div class="trans-stat-l">Independent review</div>
+        </div>
+        <div class="trans-stat">
+          <div class="trans-stat-n">5%</div>
+          <div class="trans-stat-l">Administration fund</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="report-list">
+      <!-- Reports will be added here as they are published -->
+      <div style="background:var(--white);border-radius:14px;padding:40px;text-align:center;border:2px dashed var(--gray);">
+        <div style="font-size:36px;margin-bottom:12px;">📊</div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:var(--navy);margin-bottom:10px;">Reports Published Quarterly</h3>
+        <p style="font-size:15px;color:var(--dgray);line-height:1.7;max-width:500px;margin:0 auto;">Quarterly financial statements are emailed to all members and archived here. Check back each quarter for the latest report.</p>
+      </div>
+
+      <!-- Template for how reports will look when added -->
+      <div style="margin-top:24px;opacity:0.5;pointer-events:none;">
+        <div class="report-item">
+          <div class="report-month">
+            <div class="report-month-name">Mar</div>
+            <div class="report-month-year">2026</div>
+          </div>
+          <div class="report-info">
+            <div class="report-title">Q1 Financial Report — 2026</div>
+            <div class="report-meta">Members: — · Collected: $— · Disbursed: $— · Balance: $—</div>
+          </div>
+          <span class="report-badge badge-new">Coming Soon</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- CONTACT PAGE -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="page" id="page-contact">
+  <section class="leadership-section">
+    <div class="section-header">
+      <div class="section-label">Your Leaders</div>
+      <h2 class="section-title">Leadership Team</h2>
+      <p class="section-desc">Elected officers serving you with integrity and transparency. All officers serve 2-year terms by democratic election.</p>
+    </div>
+
+    <div class="leaders-grid">
+      <div class="leader-card">
+        <div class="leader-avatar">CN</div>
+        <div class="leader-name">Chidzero Nkumba</div>
+        <div class="leader-role">President</div>
+        <div class="leader-desc">Leads the organization, chairs meetings, represents Mgwirizano Watsopano externally, and holds final decision authority.</div>
+      </div>
+      <div class="leader-card">
+        <div class="leader-avatar">CK</div>
+        <div class="leader-name">Chikondi Nkhoma</div>
+        <div class="leader-role">Treasurer</div>
+        <div class="leader-desc">Manages all finances, payment records, disbursements, and produces quarterly financial reports for all members.</div>
+      </div>
+      <div class="leader-card">
+        <div class="leader-avatar">AM</div>
+        <div class="leader-name">Alex Mandala</div>
+        <div class="leader-role">Secretary</div>
+        <div class="leader-desc">Maintains member records, manages communications, administers technology systems, and records meeting minutes.</div>
+      </div>
+    </div>
+
+    <div class="contact-box">
+      <h3>Contact Leadership</h3>
+      <p>We respond to all queries within 24 hours. For urgent matters — especially bereavements — please email us immediately and also send a WhatsApp message.</p>
+      <div class="contact-email">admin@mgwirizano.net</div>
+      <div style="margin-top:8px;font-size:14px;opacity:0.8;">mgwirizano2026@gmail.com <span style="font-size:12px;opacity:0.6;">(Zelle payments only)</span></div>
+      <br>
+      <a href="javascript:void(0)" onclick="window.location='mailto:admin@mgwirizano.net?subject=Inquiry — Mgwirizano Watsopano'" class="btn-primary">Send Us an Email →</a>
+    </div>
+
+    <!-- Governance commitment -->
+    <div style="margin-top:60px;background:var(--navy);border-radius:20px;padding:48px;max-width:800px;margin:60px auto 0;">
+      <h3 style="font-family:'Playfair Display',serif;font-size:24px;color:var(--white);text-align:center;margin-bottom:24px;">Our Commitment to You</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="color:var(--light);font-size:16px;flex-shrink:0;margin-top:2px;">✓</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.75);">Respond to every query within 24 hours</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="color:var(--light);font-size:16px;flex-shrink:0;margin-top:2px;">✓</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.75);">Publish financial statements every month</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="color:var(--light);font-size:16px;flex-shrink:0;margin-top:2px;">✓</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.75);">Never delete accountability questions</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="color:var(--light);font-size:16px;flex-shrink:0;margin-top:2px;">✓</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.75);">Hold democratic elections every 2 years</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="color:var(--light);font-size:16px;flex-shrink:0;margin-top:2px;">✓</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.75);">Welcome independent financial review</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="color:var(--light);font-size:16px;flex-shrink:0;margin-top:2px;">✓</span>
+          <span style="font-size:14px;color:rgba(255,255,255,0.75);">Treat every member with dignity always</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="footer-logo-wrap">
+        <div class="footer-logo">
+          <img src="https://lh3.googleusercontent.com/d/1S3eEVjZY5yTfOXadnZfYU-1xbWGrykeP" alt="MW"/>
+        </div>
+        <div class="footer-name">Mgwirizano Watsopano</div>
+      </div>
+      <p class="footer-tagline-full">A benevolent mutual aid society for Malawians in the United States. Built on transparency, governed democratically, and dedicated to standing with every member in their time of need.</p>
+      <div class="footer-values">
+        <span class="footer-val">Unity</span>
+        <span class="footer-val">Benevolence</span>
+        <span class="footer-val">Support</span>
+        <span class="footer-val">Transparency</span>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Members</h4>
+      <ul>
+        <li><a href="#" onclick="show('portal')">Member Portal</a></li>
+        <li><a href="#" onclick="show('join')">Register</a></li>
+        <li><a href="https://script.google.com/macros/s/AKfycbwyZejHw475lEKJitdrcQVvCz2enKCtPVZO35_qBv6t_nWI8JapUHwh6zi2vZxwh2FSng/exec?page=help" target="_blank">Help Centre</a></li>
+        <li><a href="/register.html" target="_blank">Update Details</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Resources</h4>
+      <ul>
+        <li><a href="#" onclick="show('resources')">Member Guide</a></li>
+        <li><a href="#" onclick="show('resources')">Constitution</a></li>
+        <li><a href="#" onclick="show('reports')">Financial Reports</a></li>
+        <li><a href="#" onclick="show('resources')">FAQ</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Leadership</h4>
+      <ul>
+        <li><a href="#" onclick="show('contact')">Our Team</a></li>
+        <li><a href="javascript:void(0)" onclick="window.location='mailto:admin@mgwirizano.net'">Contact Us</a></li>
+        <li><a href="#" onclick="show('reports')">Reports</a></li>
+        <li><a href="#" onclick="show('contact')">Governance</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 Mgwirizano Watsopano &middot; All Rights Reserved</span>
+    <span>admin@mgwirizano.net</span>
+  </div>
+</footer>
+
+
+<script>
+var PAGE_LABELS = {
+  home:'Home', portal:'Member Portal', join:'Join Us',
+  resources:'Resources', reports:'Financial Reports', contact:'Contact'
+};
+var pageHistory = ['home'];
+var currentPage = 'home';
+
+function show(page) {
+  if (page !== currentPage) { pageHistory.push(page); currentPage = page; }
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  var pg = document.getElementById('page-' + page);
+  if(pg) pg.classList.add('active');
+  document.querySelectorAll('.nav-links a').forEach(function(a){ a.classList.remove('active'); });
+  var nav = document.getElementById('nav-' + page);
+  if(nav) nav.classList.add('active');
+  document.querySelectorAll('.mobile-drawer a').forEach(function(a){ a.classList.remove('active'); });
+  var mnav = document.getElementById('m-nav-' + page);
+  if(mnav) mnav.classList.add('active');
+  document.querySelectorAll('.bottom-nav-item').forEach(function(b){ b.classList.remove('active'); });
+  var bn = document.getElementById('bn-' + page);
+  if(bn) bn.classList.add('active');
+  var backBar = document.getElementById('backBar');
+  var label = document.getElementById('currentPageLabel');
+  if(page === 'home'){ backBar.style.display='none'; }
+  else { backBar.style.display='flex'; label.textContent = PAGE_LABELS[page]||page; }
+  window.scrollTo(0,0);
+  if(history.pushState) history.pushState({page:page},'','#'+page);
+}
+
+function goBack() {
+  if(pageHistory.length > 1){
+    pageHistory.pop();
+    var prev = pageHistory[pageHistory.length - 1];
+    currentPage = prev;
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    var pg = document.getElementById('page-' + prev);
+    if(pg) pg.classList.add('active');
+    document.querySelectorAll('.nav-links a, .mobile-drawer a').forEach(function(a){ a.classList.remove('active'); });
+    var nav = document.getElementById('nav-' + prev);
+    if(nav) nav.classList.add('active');
+    document.querySelectorAll('.bottom-nav-item').forEach(function(b){ b.classList.remove('active'); });
+    var bn = document.getElementById('bn-' + prev);
+    if(bn) bn.classList.add('active');
+    var backBar = document.getElementById('backBar');
+    if(prev === 'home'){ backBar.style.display='none'; }
+    else { backBar.style.display='flex'; document.getElementById('currentPageLabel').textContent = PAGE_LABELS[prev]||prev; }
+    window.scrollTo(0,0);
+    if(history.pushState) history.pushState({page:prev},'','#'+prev);
+  } else { show('home'); }
+}
+
+function toggleMenu(){
+  var d=document.getElementById('mobileDrawer');
+  var b=document.getElementById('hamburger');
+  var isOpen = d.classList.contains('open');
+  if(isOpen){ d.classList.remove('open'); b.classList.remove('open'); }
+  else { d.classList.add('open'); b.classList.add('open'); }
+}
+
+function closeMenu(){
+  var d=document.getElementById('mobileDrawer');
+  var b=document.getElementById('hamburger');
+  d.classList.remove('open');
+  b.classList.remove('open');
+}
+
+function openPortal(){
+  var id = document.getElementById('portalId').value.trim().toUpperCase();
+  if(!id){ alert('Please enter your Member ID'); return; }
+  if(/^\d+$/.test(id)) id = 'MW' + id.padStart(4,'0');
+  if(!/^MW\d{4}$/.test(id)){ alert('Please enter a valid Member ID — e.g. MW0001'); return; }
+  window.open('member_portal.html?id=' + encodeURIComponent(id), '_blank');
+}
+
+// Handle hash navigation on load
+(function(){
+  var hash = window.location.hash.replace('#','');
+  var valid = ['home','portal','join','resources','reports','contact'];
+  if(hash && valid.indexOf(hash) !== -1){ show(hash); }
+  window.addEventListener('popstate', function(e){
+    if(e.state && e.state.page) show(e.state.page);
+  });
+})();
+</script>
+</body>
+</html>
