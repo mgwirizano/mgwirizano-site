@@ -517,42 +517,32 @@ table.member-table { width:100%;border-collapse:collapse;font-size:13px; }
   </div>
 </div>
 
-<!-- BULK REMIND MODAL -->
-<div class="modal-backdrop" id="bulk-modal">
+<!-- BULK REMIND PASSWORD MODAL -->
+<div class="modal-backdrop" id="bulk-pass-modal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Bulk Reminder</div>
-      <div class="modal-sub">Send to all members with outstanding balances</div>
+      <div class="modal-title">Confirm Bulk Reminder</div>
+      <div class="modal-sub">Password required to send bulk reminders</div>
     </div>
     <div class="modal-body">
-      <div class="modal-info-box" id="bulk-modal-info"></div>
-      <div class="modal-note">A reminder email will be sent to every member currently shown in the table who has an outstanding balance. This respects the current filter — if you have "Unpaid" selected, only unpaid members get the reminder.</div>
+      <div style="background:rgba(213,35,33,0.1);border:1px solid rgba(213,35,33,0.3);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#ff8a88;">
+        ⚠ This will send reminder emails to multiple members. Enter the leadership password to continue.
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Leadership Password</label>
+        <input id="bulk-pass-input" type="password" placeholder="Enter password"
+          style="width:100%;padding:11px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;letter-spacing:2px;"
+          onkeydown="if(event.key==='Enter')confirmBulkPass()">
+        <div id="bulk-pass-error" style="color:#ff8a88;font-size:12px;margin-top:8px;min-height:16px;"></div>
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeBulkModal()">Cancel</button>
-      <button class="btn-send" id="bulk-send-btn" onclick="sendBulkReminders()">Send All Reminders →</button>
+      <button class="btn-cancel" onclick="closeBulkPassModal()">Cancel</button>
+      <button class="btn-send" onclick="confirmBulkPass()">Confirm →</button>
     </div>
   </div>
 </div>
-
-<!-- REMINDER MODAL -->
-<div class="modal-backdrop" id="remind-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Send Reminder</div>
-      <div class="modal-sub">Registration Fee Outstanding</div>
-    </div>
-    <div class="modal-body">
-      <div class="modal-info-box" id="modal-member-info"></div>
-      <div class="modal-note">A friendly reminder email will be sent directly to this member with their Zelle payment instructions and Member ID. No further action needed from you.</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-send" onclick="sendReminder()">Send Reminder Email →</button>
-    </div>
-  </div>
-</div>
-
+  
 <script>
 // ── CONFIG ──────────────────────────────────
 // ⚠ UPDATE THIS after every new Apps Script deployment
@@ -1239,99 +1229,57 @@ function sendReminder() {
   }, 10000);
 }
 
-// ── BULK REMINDER ──────────────────────────────────
-function openBulkRemind() {
-  // Get members currently visible in table with outstanding balance
-  const rows = document.querySelectorAll("#member-tbody tr");
+const BULK_REMIND_PASSWORD = "MW2026!"; // ← Change to your chosen password
+
+function openBulkRemindWithPassword() {
   let targets = [];
   allMembers.forEach(m => {
     if (m.regStatus !== "PAID" && m.regBalance > 0 && m.email) {
-      // Check if currently visible (respects filter)
       const btn = document.getElementById("rb-" + m.id);
       if (btn) targets.push(m);
     }
   });
-
   if (targets.length === 0) {
     showToast("No members with outstanding balances in current view");
     return;
   }
+  window._bulkTargets = targets;
+  document.getElementById("bulk-pass-input").value = "";
+  document.getElementById("bulk-pass-error").textContent = "";
+  document.getElementById("bulk-pass-modal").classList.add("open");
+  setTimeout(() => document.getElementById("bulk-pass-input").focus(), 200);
+}
 
+function closeBulkPassModal() {
+  document.getElementById("bulk-pass-modal").classList.remove("open");
+  document.getElementById("bulk-pass-input").value = "";
+  document.getElementById("bulk-pass-error").textContent = "";
+  window._bulkTargets = [];
+}
+
+function confirmBulkPass() {
+  const entered = document.getElementById("bulk-pass-input").value;
+  if (entered !== BULK_REMIND_PASSWORD) {
+    document.getElementById("bulk-pass-error").textContent = "Incorrect password. Admin has been notified.";
+    document.getElementById("bulk-pass-input").value = "";
+    document.getElementById("bulk-pass-input").focus();
+    const cb = "passf_" + Date.now();
+    window[cb] = function() { delete window[cb]; };
+    const who = sessionStorage.getItem("mw_name") || sessionStorage.getItem("mw_tok") || "Unknown";
+    const s = document.createElement("script");
+    s.src = SCRIPT_URL + "?action=security_alert&event=bulk_remind_wrong_password&who=" + encodeURIComponent(who) + "&time=" + encodeURIComponent(new Date().toLocaleString()) + "&callback=" + cb;
+    document.body.appendChild(s);
+    setTimeout(() => { try{document.body.removeChild(s);}catch(e){} }, 8000);
+    return;
+  }
+  document.getElementById("bulk-pass-modal").classList.remove("open");
+  const targets = window._bulkTargets || [];
   document.getElementById("bulk-modal-info").innerHTML =
     `<strong>${targets.length} member${targets.length !== 1 ? "s" : ""}</strong> will receive a reminder email.<br>
      Unpaid: <strong style="color:#ff8a88">${targets.filter(m=>m.regStatus==="UNPAID").length}</strong> &nbsp;·&nbsp;
      Partial: <strong style="color:#f0c050">${targets.filter(m=>m.regStatus==="PARTIAL").length}</strong><br><br>
      <small style="color:var(--text2)">Emails send one at a time to avoid spam filters. This may take a minute.</small>`;
-
-  window._bulkTargets = targets;
   document.getElementById("bulk-modal").classList.add("open");
-}
-
-function closeBulkModal() {
-  document.getElementById("bulk-modal").classList.remove("open");
-  window._bulkTargets = [];
-}
-
-async function sendBulkReminders() {
-  const targets = window._bulkTargets || [];
-  if (!targets.length) return;
-
-  const sendBtn = document.getElementById("bulk-send-btn");
-  const bulkBtn = document.getElementById("bulk-remind-btn");
-  const progress = document.getElementById("bulk-progress");
-  sendBtn.disabled = true;
-  sendBtn.textContent = "Sending…";
-  closeBulkModal();
-  bulkBtn.className = "bulk-remind-btn running";
-  bulkBtn.textContent = "Sending…";
-
-  let sent = 0, failed = 0;
-
-  for (let i = 0; i < targets.length; i++) {
-    const m = targets[i];
-    progress.textContent = `${i+1}/${targets.length}`;
-    bulkBtn.textContent = `Sending ${i+1}/${targets.length}…`;
-
-    await new Promise(resolve => {
-      const cb = "bulk_" + Date.now() + "_" + i;
-      let done = false;
-      window[cb] = function(resp) {
-        done = true;
-        if (resp && resp.status === "ok") sent++;
-        else failed++;
-        delete window[cb];
-        resolve();
-      };
-      setTimeout(() => {
-        if (!done) { failed++; delete window[cb]; resolve(); }
-      }, 12000);
-      const s = document.createElement("script");
-      s.src = SCRIPT_URL + "?action=remind&memberId=" + encodeURIComponent(m.id) + "&callback=" + cb;
-      document.body.appendChild(s);
-      setTimeout(() => { try{document.body.removeChild(s);}catch(e){} }, 15000);
-    });
-
-    // Mark button as sent
-    const btn = document.getElementById("rb-" + m.id);
-    if (btn) { btn.textContent = "✓ Sent"; btn.className = "remind-btn sent"; }
-
-    // Small delay between sends
-    await new Promise(r => setTimeout(r, 800));
-  }
-
-  bulkBtn.className = "bulk-remind-btn done";
-  bulkBtn.textContent = `✓ ${sent} sent`;
-  progress.textContent = failed > 0 ? `${failed} failed` : "";
-  sendBtn.disabled = false;
-  sendBtn.textContent = "Send All Reminders →";
-}
-
-function showToast(msg) {
-  // Toast already defined elsewhere but add safety
-  const t = document.getElementById("toast");
-  if (!t) return;
-  t.textContent = msg; t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 3000);
 }
 
 // ── ELIGIBILITY ROW CLICKS ─────────────────
