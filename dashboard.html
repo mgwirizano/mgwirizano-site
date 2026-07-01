@@ -628,7 +628,8 @@ function render(d) {
         </div>`).join("") : '<div class="empty">No recent payments on record</div>';
   document.getElementById("main-content").innerHTML = `
     <div class="stats-grid">
-      <div class="stat-card navy clickable" onclick="statCardClick('all')"><div class="stat-label">Total members</div><div class="stat-value">${total}</div><div class="stat-sub">${d.paidCount} fully paid · ${d.partialCount} partial</div></div>
+      <div class="stat-card navy clickable" onclick="statCardClick('FUND')"><div class="stat-label">Active funds</div><div class="stat-value">${d.activeFunds ? d.activeFunds.length : 0}</div><div class="stat-sub">${d.activeFunds && d.activeFunds.length ? d.activeFunds.map(function(f){return f.code;}).join(' · ') : 'none active'}</div></div>
+      <div class="stat-card green"><div class="stat-label">Bank Balance</div><div class="stat-value" style="font-size:32px;letter-spacing:1px">${fmtAmt(d.netBalance !== undefined ? d.netBalance : d.totalCollected)}</div><div class="stat-sub">After payouts · ${fmtAmt(d.totalDisbursed || 0)} paid out</div></div>
       <div class="stat-card green clickable" onclick="statCardClick('PAID')"><div class="stat-label">Reg fee paid</div><div class="stat-value">${d.paidCount}</div><div class="stat-sub">${Math.round(d.paidCount/Math.max(1,total)*100)}% of members</div></div>
       <div class="stat-card red clickable" onclick="statCardClick('OUTSTANDING')"><div class="stat-label">Outstanding</div><div class="stat-value">${d.unpaidCount + d.partialCount}</div><div class="stat-sub">${d.partialCount} partial · ${d.unpaidCount} unpaid</div></div>
       <div class="stat-card green"><div class="stat-label">Total collected</div><div class="stat-value" style="font-size:32px;letter-spacing:1px">${fmtAmt(d.totalCollected)}</div><div class="stat-sub">${fmtAmt(d.thisMonthCollected)} this month</div></div>
