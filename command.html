@@ -1,0 +1,2182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MW — Leadership Dashboard</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:   #0a1a2e;
+  --navy2:  #132540;
+  --navy3:  #1c3557;
+  --green:  #217B31;
+  --green2: #1a6228;
+  --glight: #eaf5ed;
+  --gmid:   #a8d880;
+  --red:    #D52321;
+  --rlight: rgba(213,35,33,0.12);
+  --gold:   #D68B0C;
+  --bg:     #0d1f35;
+  --card:   #13284a;
+  --card2:  #172d52;
+  --border: rgba(255,255,255,0.07);
+  --text:   #e8eef6;
+  --text2:  #8fa4bf;
+  --text3:  #5a7490;
+  --r:      14px;
+  --r2:     8px;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+#lock-screen {
+  position:fixed; inset:0; z-index:9999;
+  background:linear-gradient(135deg,#060e1a 0%,#0d1f35 50%,#0a1a2e 100%);
+  display:flex; align-items:center; justify-content:center;
+  transition:opacity 0.5s;
+}
+#lock-screen.fade-out { opacity:0; pointer-events:none; }
+.lock-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:20px; padding:48px 44px; width:380px; max-width:92vw;
+  text-align:center; box-shadow:0 40px 80px rgba(0,0,0,0.6);
+}
+.lock-logo { width:72px;height:72px;border-radius:50%;overflow:hidden;margin:0 auto 20px;border:3px solid var(--red);box-shadow:0 0 0 4px var(--navy),0 0 0 7px var(--green); }
+.lock-logo img { width:100%;height:100%;object-fit:cover;display:block; }
+.lock-title { font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:#fff;margin-bottom:4px; }
+.lock-sub { font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gmid);margin-bottom:32px; }
+/* ── HERO BANNER ─────────────────────────────── */
+.hero-banner {
+  background:linear-gradient(135deg,var(--navy2) 0%,var(--navy3) 100%);
+  border:1px solid var(--border); border-radius:var(--r);
+  padding:16px 20px; margin-bottom:20px; position:relative; overflow:hidden;
+}
+.hero-banner::before {
+  content:''; position:absolute; top:-40%; right:-10%; width:340px; height:340px;
+  background:radial-gradient(circle, rgba(33,123,49,0.18) 0%, transparent 70%); pointer-events:none;
+}
+.hero-eyebrow { font-size:11px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--gmid); margin-bottom:8px; }
+.hero-title { font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:1px; color:#fff; margin-bottom:8px; }
+.hero-desc { font-size:13px; color:var(--text2); max-width:560px; line-height:1.7; margin-bottom:18px; }
+.hero-actions { display:flex; gap:10px; flex-wrap:wrap; position:relative; z-index:1; }
+.hero-btn { border:none; border-radius:8px; padding:10px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; }
+.hero-btn.primary { background:var(--green); color:#fff; }
+.hero-btn.primary:hover { background:var(--green2); }
+.hero-btn.secondary { background:var(--card2); color:var(--text); border:1px solid var(--border); }
+.hero-btn.secondary:hover { border-color:var(--text3); }
+.hero-btn.gold { background:var(--gold); color:#1a1200; }
+.hero-btn.teal { background:#1a5c2a; color:#fff; }
+.hero-btn.teal:hover { background:#217B31; }
+.hero-btn.purple { background:#3a2a5e; color:#fff; border:1px solid rgba(255,255,255,0.15); }
+.hero-btn.purple:hover { background:#4a3670; }
+
+/* ── ICON STAT CARDS ─────────────────────────────── */
+.stat-icon { font-size:18px; margin-bottom:8px; opacity:0.85; }
+
+/* ── PRIORITY PULSE ─────────────────────────────── */
+.pulse-item { display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+.pulse-item:last-child { border-bottom:none; }
+.pulse-icon { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+.pulse-icon.high { background:rgba(213,35,33,0.15); }
+.pulse-icon.med { background:rgba(214,139,12,0.15); }
+.pulse-icon.low { background:rgba(55,138,221,0.15); }
+.pulse-title { font-size:13px; font-weight:600; color:var(--text); }
+.pulse-sub { font-size:11px; color:var(--text2); margin-top:2px; }
+
+.header { background:var(--card);border-bottom:2px solid var(--red);padding:0 16px;min-height:62px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 4px 24px rgba(0,0,0,0.4); }
+.header-center { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; padding:8px 0; }
+@media(max-width:1100px){
+  .header { grid-template-columns:1fr; justify-items:center; padding:10px 16px; }
+  .header-center { order:3; width:100%; }
+  .header-right { order:2; }
+}
+.header-left { display:flex;align-items:center;gap:10px;flex:1;min-width:0; }
+.header-logo { width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid var(--red);box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--green);flex-shrink:0; }
+.header-logo img { width:100%;height:100%;object-fit:cover; }
+.header-title { font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.header-sub { font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gmid); }
+.header-right { display:flex;align-items:center;gap:8px;flex-shrink:0; }
+@media(max-width:480px){
+  .refresh-time { display:none; }
+  .header-title { font-size:14px; }
+  .status-pill span { display:none; }
+}
+.status-pill { display:flex;align-items:center;gap:7px;background:rgba(33,123,49,0.12);border:1px solid rgba(33,123,49,0.25);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;color:var(--gmid); }
+.status-dot { width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(33,123,49,0.5);}50%{box-shadow:0 0 0 5px rgba(33,123,49,0);} }
+.refresh-time { font-size:11px;color:var(--text3); }
+.btn-refresh { background:var(--green2);border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;transition:background 0.2s,transform 0.1s;font-family:'DM Sans',sans-serif; }
+.btn-refresh:hover { background:var(--green); }
+.btn-refresh:active { transform:scale(0.96); }
+.main { padding:16px;max-width:1600px;margin:0 auto; }
+@media(max-width:600px){.main{padding:10px;}}
+.loading-state { display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 0;gap:16px; }
+.spinner { width:44px;height:44px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--green);animation:spin 0.9s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg);} }
+.loading-text { color:var(--text2);font-size:14px;letter-spacing:1px; }
+.error-box { background:rgba(213,35,33,0.1);border:1px solid rgba(213,35,33,0.3);border-radius:var(--r);padding:28px 32px;color:#ff8a88;font-size:15px;text-align:center;margin:60px auto;max-width:500px; }
+.stats-grid { display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-bottom:22px; }
+@media(max-width:1200px){.stats-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:700px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-card { border-radius:var(--r);padding:22px 20px;position:relative;overflow:hidden;border:1px solid var(--border);transition:transform 0.2s,box-shadow 0.2s;cursor:pointer; }
+.stat-card:hover { transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+.stat-card:active { transform:scale(0.97); }
+.stat-card.clickable::after { content:'↓';position:absolute;bottom:8px;right:12px;font-size:11px;color:rgba(255,255,255,0.25); }
+.stat-card::before { content:'';position:absolute;top:0;left:0;right:0;height:3px; }
+.stat-card.navy  { background:var(--card); }
+.stat-card.navy::before  { background:linear-gradient(90deg,var(--navy3),var(--navy2)); }
+.stat-card.green { background:linear-gradient(135deg,#0f2d1a,#122918); }
+.stat-card.green::before { background:var(--green); }
+.stat-card.red   { background:linear-gradient(135deg,#2e0d0d,#271010); }
+.stat-card.red::before   { background:var(--red); }
+.stat-card.gold  { background:linear-gradient(135deg,#2e1f00,#271c00); }
+.stat-card.gold::before  { background:var(--gold); }
+.stat-card.blue  { background:linear-gradient(135deg,#0d1f38,#0f2440); }
+.stat-card.blue::before  { background:#378ADD; }
+.stat-card.teal  { background:linear-gradient(135deg,#04292b,#052f31); }
+.stat-card.teal::before  { background:#2FB8AC; }
+.stat-label { font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--text2);margin-bottom:10px; }
+.stat-value { font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;line-height:1; }
+.stat-card.green .stat-value { color:var(--gmid); }
+.stat-card.red   .stat-value { color:#ff8a88; }
+.stat-card.gold  .stat-value { color:#f0c050; }
+.stat-card.navy  .stat-value { color:#fff; }
+.stat-card.blue  .stat-value { color:#93c5fd; }
+.stat-card.teal  .stat-value { color:#5eead4; }
+.stat-sub { font-size:11px;color:var(--text2);margin-top:6px; }
+.two-col { display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start; }
+@media(max-width:1100px){.two-col{grid-template-columns:1fr;}}
+.right-col { display:flex;flex-direction:column;gap:18px; }
+.card { background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden; }
+.card-header { display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border); }
+.card-title { font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text2); }
+.card-count { background:var(--navy3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700;color:var(--gmid); }
+.filter-bar { display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--card2); }
+.filter-btn { background:transparent;border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all 0.15s; }
+.filter-btn:hover { border-color:var(--text3);color:var(--text); }
+.filter-btn.active { background:var(--navy3);border-color:var(--text3);color:#fff; }
+.filter-btn.green.active { background:rgba(33,123,49,0.25);border-color:var(--green);color:var(--gmid); }
+.filter-btn.gold.active  { background:rgba(214,139,12,0.2);border-color:var(--gold);color:#f0c050; }
+.filter-btn.red.active   { background:rgba(213,35,33,0.2);border-color:var(--red);color:#ff8a88; }
+.search-input { margin-left:auto;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;width:200px; }
+.search-input::placeholder { color:var(--text3); }
+.search-input:focus { outline:none;border-color:var(--green); }
+.member-table-wrap { overflow-x:auto; }
+.pager { display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 0 4px; font-size:12px; color:var(--text2); }
+.pager-btn { background:var(--card2); border:1px solid var(--border); color:var(--text); padding:5px 12px; border-radius:8px; cursor:pointer; font-size:12px; }
+.pager-btn:disabled { opacity:0.35; cursor:default; }
+.fix-row-btn { background:rgba(90,42,94,0.2); border:1px solid rgba(90,42,94,0.4); border-radius:6px; padding:4px 9px; font-size:11px; color:#c9a3d4; cursor:pointer; white-space:nowrap; }
+.fix-row-btn:hover { background:rgba(90,42,94,0.35); }
+.tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; letter-spacing:0.3px; }
+.tag.confirmed { background:rgba(33,123,49,0.2); color:#4ade80; }
+.tag.reversed { background:rgba(255,255,255,0.08); color:var(--text3); }
+.tag.pending { background:rgba(214,139,12,0.2); color:#fbbf24; }
+table.member-table { width:100%;border-collapse:collapse;font-size:13px; }
+.member-table thead th { padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);background:var(--card2);border-bottom:1px solid var(--border); }
+.member-table tbody tr { border-bottom:1px solid var(--border);transition:background 0.15s;cursor:pointer; }
+.member-table tbody tr:hover { background:rgba(28,53,87,0.7); }
+.member-table td { padding:11px 14px;vertical-align:middle; }
+.id-cell { font-family:monospace;font-size:12px;color:var(--text2);font-weight:600; }
+.name-cell { color:var(--text);font-weight:500; }
+.name-cell .name-link { color:var(--text);text-decoration:none;border-bottom:1px dashed var(--text3);padding-bottom:1px;transition:color 0.15s,border-color 0.15s; }
+.name-cell .name-link:hover { color:var(--gmid);border-color:var(--gmid); }
+.badge { display:inline-block;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase; }
+.badge.paid    { background:rgba(33,123,49,0.2);color:var(--gmid); }
+.badge.partial { background:rgba(214,139,12,0.2);color:#f0c050; }
+.badge.unpaid  { background:rgba(213,35,33,0.2);color:#ff8a88; }
+.balance-cell      { font-weight:700;font-size:13px; }
+.balance-cell.owed  { color:#ff8a88; }
+.balance-cell.clear { color:var(--gmid); }
+.remind-btn { background:rgba(214,139,12,0.12);border:1px solid rgba(214,139,12,0.3);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;color:#f0c050;white-space:nowrap;font-family:'DM Sans',sans-serif;transition:all 0.15s; }
+.remind-btn:hover { background:rgba(214,139,12,0.25); }
+.remind-btn.sent  { background:rgba(33,123,49,0.2);border-color:rgba(33,123,49,0.3);color:var(--gmid);cursor:default; }
+.bulk-remind-btn {
+  background:rgba(213,35,33,0.15);border:1px solid rgba(213,35,33,0.4);
+  border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;
+  cursor:pointer;color:#ff8a88;white-space:nowrap;
+  font-family:'DM Sans',sans-serif;transition:all 0.15s;margin-left:auto;
+}
+.bulk-remind-btn:hover { background:rgba(213,35,33,0.28); }
+.bulk-remind-btn.running { background:rgba(214,139,12,0.15);border-color:rgba(214,139,12,0.4);color:#f0c050;cursor:default; }
+.bulk-remind-btn.done { background:rgba(33,123,49,0.2);border-color:rgba(33,123,49,0.3);color:var(--gmid);cursor:default; }
+.bulk-progress { font-size:11px;color:var(--text2);margin-left:8px; }
+.elig-bars { padding:18px 20px;display:flex;flex-direction:column;gap:14px; }
+.elig-row { display:flex;align-items:center;gap:10px; }
+.elig-label { font-size:12px;font-weight:600;width:72px; }
+.elig-row.eligible   .elig-label { color:var(--gmid); }
+.elig-row.at-risk    .elig-label { color:#f0c050; }
+.elig-row.ineligible .elig-label { color:#ff8a88; }
+.elig-bar-wrap { flex:1;height:8px;background:var(--card2);border-radius:4px;overflow:hidden; }
+.elig-bar { height:100%;border-radius:4px;transition:width 1s ease; }
+.elig-row.eligible   .elig-bar { background:var(--green); }
+.elig-row.at-risk    .elig-bar { background:var(--gold); }
+.elig-row.ineligible .elig-bar { background:var(--red); }
+.elig-row { cursor:pointer; border-radius:8px; transition:background 0.15s; padding:4px 6px; margin:0 -6px; }
+.elig-row:hover { background:rgba(255,255,255,0.05); }
+.elig-row:active { background:rgba(255,255,255,0.1); }
+.elig-row .elig-label::after { content:' →'; opacity:0; font-size:11px; transition:opacity 0.15s; }
+.elig-row:hover .elig-label::after { opacity:0.5; }
+.elig-count { font-size:13px;font-weight:700;width:24px;text-align:right; }
+.capacity-wrap { padding:20px;text-align:center; }
+.capacity-value { font-family:'Bebas Neue',sans-serif;font-size:56px;letter-spacing:4px;line-height:1;color:var(--gmid); }
+.capacity-label { font-size:12px;color:var(--text2);margin:6px 0; }
+.capacity-track { height:10px;background:var(--card2);border-radius:5px;overflow:hidden;margin:12px 0 6px; }
+.capacity-fill { height:100%;background:linear-gradient(90deg,var(--green2),var(--green));border-radius:5px;transition:width 1s ease; }
+.fund-item { padding:14px 20px;border-bottom:1px solid var(--border); }
+.fund-item:last-child { border-bottom:none; }
+.fund-name { font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px; }
+.fund-progress-wrap { height:6px;background:var(--card2);border-radius:3px;overflow:hidden;margin-bottom:6px; }
+.fund-progress { height:100%;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:3px;transition:width 1s; }
+.fund-meta { display:flex;justify-content:space-between;font-size:11px;color:var(--text2); }
+.fund-badge { display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:1px;background:rgba(213,35,33,0.2);color:#ff8a88;margin-bottom:6px; }
+.payment-row { display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);transition:background 0.15s; }
+.payment-row:hover { background:var(--card2); }
+.payment-row:last-child { border-bottom:none; }
+.payment-avatar { width:36px;height:36px;border-radius:50%;background:var(--navy3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--gmid);flex-shrink:0; }
+.payment-name  { font-size:13px;font-weight:600; }
+.payment-meta  { font-size:11px;color:var(--text2);margin-top:1px; }
+.payment-amount { margin-left:auto;font-weight:700;font-size:14px;color:var(--gmid);white-space:nowrap; }
+.payment-date  { font-size:11px;color:var(--text3);white-space:nowrap;margin-left:10px; }
+.empty { padding:28px;text-align:center;font-size:13px;color:var(--text3); }
+.drawer-backdrop { position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:500;display:none;backdrop-filter:blur(3px); }
+.drawer-backdrop.open { display:block; }
+.drawer { position:fixed;right:0;top:0;bottom:0;width:560px;max-width:95vw;background:var(--navy2);border-left:2px solid var(--border);z-index:501;overflow-y:auto;transform:translateX(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);box-shadow:-20px 0 60px rgba(0,0,0,0.5); }
+.drawer.open { transform:translateX(0); }
+.drawer-header { position:sticky;top:0;z-index:10;background:var(--navy);padding:20px 24px 16px;border-bottom:3px solid var(--red);display:flex;align-items:flex-start;justify-content:space-between; }
+.drawer-close { background:transparent;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s; }
+.drawer-close:hover { background:var(--card2);color:#fff; }
+.drawer-name { font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:#fff; }
+.drawer-id   { font-family:monospace;font-size:13px;color:var(--gmid);margin-top:3px; }
+.drawer-body { padding:0; }
+.drawer-tabs { display:flex;border-bottom:2px solid var(--border);background:var(--card2); }
+.drawer-tab { flex:1;padding:12px 8px;text-align:center;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.15s; }
+.drawer-tab:hover { color:var(--text);background:rgba(255,255,255,0.04); }
+.drawer-tab.active { color:var(--gmid);border-bottom-color:var(--green); }
+.drawer-tab-content { display:none;padding:20px 24px; }
+.drawer-tab-content.active { display:block; }
+.ds-head { font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);padding-bottom:8px;margin:24px 0 14px; }
+.ds-head:first-child { margin-top:0; }
+.elig-banner { border-radius:10px;padding:16px 20px;display:flex;align-items:center;gap:14px;margin-bottom:4px; }
+.elig-banner.eligible   { background:rgba(33,123,49,0.15);border:1px solid rgba(33,123,49,0.3); }
+.elig-banner.at-risk    { background:rgba(214,139,12,0.15);border:1px solid rgba(214,139,12,0.3); }
+.elig-banner.ineligible { background:rgba(213,35,33,0.12);border:1px solid rgba(213,35,33,0.25); }
+.elig-banner.waiting    { background:rgba(214,139,12,0.12);border:1px solid rgba(214,139,12,0.25); }
+.elig-icon { font-size:28px;flex-shrink:0;line-height:1; }
+.elig-title { font-size:15px;font-weight:700; }
+.elig-banner.eligible   .elig-title { color:var(--gmid); }
+.elig-banner.at-risk    .elig-title { color:#f0c050; }
+.elig-banner.ineligible .elig-title { color:#ff8a88; }
+.elig-banner.waiting    .elig-title { color:#f0c050; }
+.elig-desc { font-size:12px;color:var(--text2);margin-top:3px;line-height:1.5; }
+.profile-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+.pf-item { background:var(--card2);border-radius:8px;padding:10px 14px; }
+.pf-label { font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:4px; }
+.pf-value { font-size:13px;color:var(--text);font-weight:500; }
+.credit-breakdown { background:var(--card2);border-radius:10px;overflow:hidden; }
+.credit-row { display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px; }
+.credit-row:last-child { border-bottom:none; }
+.credit-label { color:var(--text2); }
+.credit-val { font-weight:700; }
+.credit-val.pos  { color:var(--gmid); }
+.credit-val.neg  { color:#ff8a88; }
+.credit-val.zero { color:var(--text3); }
+.credit-total { background:rgba(33,123,49,0.1);border-top:2px solid rgba(33,123,49,0.2) !important; }
+.credit-total .credit-label { color:var(--text);font-weight:700; }
+.ph-row { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border); }
+.ph-row:last-child { border-bottom:none; }
+.ph-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+.ph-dot.reg      { background:var(--green); }
+.ph-dot.funeral  { background:var(--red); }
+.ph-dot.credit   { background:var(--gold); }
+.ph-info { flex:1;min-width:0; }
+.ph-type { font-size:13px;font-weight:600;color:var(--text); }
+.ph-meta { font-size:11px;color:var(--text2);margin-top:2px; }
+.ph-amount { font-size:14px;font-weight:700;color:var(--gmid);white-space:nowrap; }
+.ph-date   { font-size:11px;color:var(--text3);white-space:nowrap;margin-left:8px; }
+.fund-status-row { display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px; }
+.fund-status-row:last-child { border-bottom:none; }
+.fsr-code { font-family:monospace;font-size:12px;color:var(--text2); }
+.fsr-badge { padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700; }
+.fsr-badge.paid    { background:rgba(33,123,49,0.2);color:var(--gmid); }
+.fsr-badge.pending { background:rgba(213,35,33,0.2);color:#ff8a88; }
+.fsr-badge.exempt  { background:rgba(90,116,144,0.25);color:var(--text2); }
+.drawer-actions { display:flex;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border); }
+.drawer-remind-btn { flex:1;background:var(--green2);border:none;border-radius:8px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;color:#fff;font-family:'DM Sans',sans-serif;transition:all 0.15s; }
+.drawer-remind-btn:hover { background:var(--green); }
+.drawer-remind-btn.sent { background:rgba(33,123,49,0.3);color:var(--gmid);cursor:default; }
+.drawer-loading { display:flex;align-items:center;justify-content:center;gap:12px;padding:60px 0;color:var(--text2);font-size:14px; }
+.modal-backdrop { position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px); }
+.modal-backdrop.open { display:flex; }
+.modal { background:var(--card);border:1px solid var(--border);border-radius:var(--r);width:420px;max-width:92vw;box-shadow:0 40px 80px rgba(0,0,0,0.6);overflow:hidden; }
+.modal-header { background:var(--navy);padding:18px 24px;border-bottom:3px solid var(--gold); }
+.modal-title { font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px; }
+.modal-sub { font-size:11px;color:var(--text2);margin-top:2px;letter-spacing:1px;text-transform:uppercase; }
+.modal-body { padding:24px; }
+.modal-info-box { background:rgba(214,139,12,0.1);border:1px solid rgba(214,139,12,0.25);border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.8;color:var(--text);margin-bottom:16px; }
+.modal-note { font-size:12px;color:var(--text2);margin-bottom:18px;line-height:1.6; }
+.modal-footer { display:flex;gap:10px;padding:0 24px 24px; }
+.btn-cancel { flex:1;background:transparent;border:1px solid var(--border);border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all 0.15s; }
+.btn-cancel:hover { border-color:var(--text3);color:var(--text); }
+.btn-send { flex:2;background:var(--green2);border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;color:#fff;font-family:'DM Sans',sans-serif;transition:all 0.15s; }
+.btn-send:hover { background:var(--green); }
+.footer { margin-top:40px;padding:20px 28px;border-top:1px solid var(--border);text-align:center;font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase; }
+#toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy3);border:1px solid var(--border);color:#fff;padding:12px 22px;border-radius:10px;font-size:13px;z-index:2000;opacity:0;pointer-events:none;transition:all 0.25s;box-shadow:0 12px 32px rgba(0,0,0,0.5); }
+#toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<!-- LOCK -->
+<div id="lock-screen">
+  <div class="lock-card">
+    <div class="lock-logo"><img src="https://lh3.googleusercontent.com/d/1S3eEVjZY5yTfOXadnZfYU-1xbWGrykeP" alt="MW"></div>
+    <div class="lock-title">MGWIRIZANO</div>
+    <div class="lock-sub">Leadership Dashboard</div>
+    <div style="margin-top:24px;">
+      <div style="font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Sign in with Google</div>
+      <div id="g_signin_btn"></div>
+      <div id="google-error" style="font-size:12px;color:var(--red);margin-top:10px;min-height:16px;"></div>
+    </div>
+  </div>
+</div>
+<!-- APP -->
+<div id="app" style="display:none">
+  <header class="header">
+    <div class="header-left">
+      <div class="header-logo"><img src="https://lh3.googleusercontent.com/d/1S3eEVjZY5yTfOXadnZfYU-1xbWGrykeP" alt="MW"></div>
+      <div>
+        <div class="header-title">MGWIRIZANO WATSOPANO</div>
+        <div class="header-sub">Leadership Dashboard</div>
+      </div>
+    </div>
+    <div class="header-center">
+      <button class="hero-btn primary" onclick="openManualPayModal()">+ Manual Payment</button>
+      <button class="hero-btn secondary" onclick="openWrongMemberModal()">🔀 Wrong Member</button>
+      <button class="hero-btn gold" onclick="openBulkRemindWithPassword()">✉ Bulk Reminder</button>
+      <button class="hero-btn teal" onclick="document.getElementById('wa-modal').classList.add('open')">💬 WhatsApp</button>
+      <button class="hero-btn purple" onclick="scrollToSection('sec-fixtool')">🔧 Fix Tool</button>
+      <button class="hero-btn secondary" onclick="openSplitModal()">⇄ Split Payment</button>
+    </div>
+    <div class="header-right">
+      <div class="status-pill"><div class="status-dot"></div><span>Live</span></div>
+      <div class="refresh-time" id="last-updated">Loading…</div>
+      <button class="btn-refresh" onclick="loadDashboard()">↺ Refresh</button>
+    </div>
+  </header>
+  <div class="main" id="main-content">
+    <div class="loading-state"><div class="spinner"></div><div class="loading-text">Loading dashboard…</div></div>
+  </div>
+  <div class="footer" id="footer" style="display:none">
+    © 2026 MGWIRIZANO WATSOPANO &nbsp;|&nbsp; LEADERSHIP USE ONLY &nbsp;|&nbsp;
+    <span id="footer-time"></span>
+  </div>
+</div>
+<!-- MEMBER DETAIL DRAWER -->
+<div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()"></div>
+<div class="drawer" id="member-drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-name" id="drawer-name">Loading…</div>
+      <div class="drawer-id"  id="drawer-id"></div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body">
+    <div class="drawer-loading"><div class="spinner"></div>Fetching member data…</div>
+  </div>
+</div>
+<!-- WHATSAPP MESSAGE MODAL -->
+<div class="modal-backdrop" id="wa-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">WhatsApp Funeral Fund Message</div>
+      <div class="modal-sub">Generate a formatted message to paste into your WhatsApp group</div>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;gap:10px;">
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Fund Code</label>
+          <input id="wa-fund" placeholder="e.g. FUND-001" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"></div>
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Deceased Name</label>
+          <input id="wa-deceased" placeholder="Full name of deceased" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Relationship</label>
+            <input id="wa-relation" placeholder="e.g. Father" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"></div>
+          <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Bereaved Member</label>
+            <input id="wa-bereaved" placeholder="Name of bereaved" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Amount per Member</label>
+            <input id="wa-amount" value="10" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"></div>
+          <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Deadline</label>
+            <input id="wa-deadline" placeholder="e.g. 4/25/2026" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"></div>
+        </div>
+        <div id="wa-preview" style="display:none;background:var(--card2);border-radius:8px;padding:14px;white-space:pre-wrap;font-size:13px;color:var(--text);border:1px solid var(--border);max-height:300px;overflow-y:auto;font-family:monospace;line-height:1.6;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeWaModal()">Cancel</button>
+      <button class="btn-send" onclick="generateWaMessage()">Generate Message →</button>
+      <button class="btn-send" id="wa-copy-btn" style="display:none;background:var(--green);" onclick="copyWaMessage()">Copy to Clipboard ✓</button>
+    </div>
+  </div>
+</div>
+<!-- MANUAL PAYMENT MODAL -->
+<div class="modal-backdrop" id="manual-pay-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Manual Payment Entry</div>
+      <div class="modal-sub">Use this if the scanner missed a payment</div>
+    </div>
+    <div class="modal-body">
+      <div style="background:rgba(214,139,12,0.1);border:1px solid rgba(214,139,12,0.3);border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:#f0c050;">
+        ⚠ Only use this for confirmed Zelle payments the scanner missed. This writes directly to the PAYMENTS sheet.
+      </div>
+      <div style="display:grid;gap:10px;">
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Member ID *</label>
+          <input id="mp-id" placeholder="e.g. MW0001" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;text-transform:uppercase;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Amount *</label>
+            <input id="mp-amount" type="number" placeholder="25" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"></div>
+          <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Payment Type</label>
+            <select id="mp-type" onchange="toggleFundSelector()" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;">
+              <option>Registration Fee</option>
+              <option>Funeral Contribution</option>
+            </select></div>
+        </div>
+        <div id="mp-fund-row" style="display:none">
+          <label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Fund Code *</label>
+          <select id="mp-fund" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;">
+            <option value="">-- Select Fund --</option>
+          </select>
+          <input id="mp-fund-manual" placeholder="Or type fund code e.g. FUND-005" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;margin-top:6px;" oninput="if(this.value)document.getElementById('mp-fund').value=''">
+        </div>
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Memo / Note</label>
+          <input id="mp-memo" placeholder="e.g. Zelle received 4/10 - scanner missed" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"></div>
+      </div>
+      <div id="mp-result" style="margin-top:12px;font-size:13px;min-height:20px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeManualPayModal()">Cancel</button>
+      <button class="btn-send" id="mp-submit-btn" onclick="submitManualPayment()">Record Payment →</button>
+    </div>
+  </div>
+</div>
+<!-- SPLIT PAYMENT MODAL -->
+<div class="modal-backdrop" id="split-modal">
+  <div class="modal" style="width:520px">
+    <div class="modal-header">
+      <div class="modal-title">Split Payment</div>
+      <div class="modal-sub">One Zelle payment, divided across multiple members</div>
+    </div>
+    <div class="modal-body">
+      <div style="background:rgba(214,139,12,0.1);border:1px solid rgba(214,139,12,0.3);border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:#f0c050;">
+        ⚠ Use this when one Zelle transfer covers 2 or more members. Each entry below is applied as its own real payment.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Sender name</label>
+          <input id="sp-sender" placeholder="e.g. MAYA MIKO BOTOMANI" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Total amount ($)</label>
+          <input id="sp-total" type="number" placeholder="40" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;" oninput="calcSplitBalance()"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Date</label>
+          <input id="sp-date" type="date" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Memo (optional)</label>
+          <input id="sp-memo" placeholder="Original memo text" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+      </div>
+      <div id="split-entries"></div>
+      <button class="btn-cancel" style="width:100%;margin-bottom:10px" onclick="addSplitEntry()">+ Add member</button>
+      <div id="split-balance" style="font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:10px;display:none"></div>
+      <div id="sp-result" style="font-size:12px;min-height:18px;margin-bottom:6px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeSplitModal()">Cancel</button>
+      <button class="btn-send" id="sp-submit-btn" onclick="submitSplitPayment()">Apply All →</button>
+    </div>
+  </div>
+</div>
+<!-- ADD PAYOUT MODAL -->
+<div class="modal-backdrop" id="payout-modal">
+  <div class="modal" style="width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Add Payout</div>
+      <div class="modal-sub">Records a new entry on the PAYOUTS sheet</div>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Fund Code</label>
+          <select id="po-fundCode" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+            <option value="">-- Select Fund --</option>
+          </select>
+          <input id="po-fundCode-manual" placeholder="Or type fund code, e.g. FUND-002" style="width:100%;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;margin-top:6px;" oninput="if(this.value)document.getElementById('po-fundCode').value=''">
+        </div>
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Amount ($)</label>
+          <input id="po-amount" type="number" placeholder="1500" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+      </div>
+      <div style="margin-bottom:12px"><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Description</label>
+        <input id="po-description" placeholder="e.g. Advance payout to Chimphonda family" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Date</label>
+          <input id="po-date" type="date" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Sent By</label>
+          <input id="po-sentBy" value="Treasurer" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Platform</label>
+          <input id="po-platform" value="Zelle from Chase" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Receiver (optional)</label>
+          <input id="po-receiver" placeholder="e.g. Viora Chimphonda Friend" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+      </div>
+      <div id="po-result" style="margin-bottom:10px;font-size:12px;min-height:18px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeAddPayoutModal()">Cancel</button>
+      <button class="btn-send" id="po-submit-btn" onclick="submitAddPayout()">Record Payout →</button>
+    </div>
+  </div>
+</div>
+<!-- WRONG MEMBER FIX MODAL -->
+<div class="modal-backdrop" id="wrong-member-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Wrong Member Fix</div>
+      <div class="modal-sub">Move a misapplied payment to the correct member</div>
+    </div>
+    <div class="modal-body">
+      <div style="background:rgba(213,35,33,0.1);border:1px solid rgba(213,35,33,0.3);border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:#ff8a88;">
+        ⚠ This reverses the original payment and re-applies it to the correct member — updating PAYMENTS, the FUND tab, and TRACK tab together. Cannot be undone from here.
+      </div>
+      <div style="display:grid;gap:10px;">
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Wrong Member ID *</label>
+          <input id="wm-wrong-id" placeholder="e.g. MW0042" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;text-transform:uppercase;"></div>
+        <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Correct Member ID *</label>
+          <input id="wm-correct-id" placeholder="e.g. MW0375" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;text-transform:uppercase;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Amount *</label>
+            <input id="wm-amount" type="number" placeholder="10" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"></div>
+          <div><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Payment Date</label>
+            <input id="wm-date" type="date" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);line-height:1.6;">The system finds the matching payment by wrong member ID, amount, and date (within a 7-day window) — it reads the original payment's type and fund directly, so you don't need to specify those.</div>
+      </div>
+      <div id="wm-result" style="margin-top:12px;font-size:13px;min-height:20px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeWrongMemberModal()">Cancel</button>
+      <button class="btn-send" id="wm-submit-btn" onclick="submitWrongMemberFix()">Move Payment →</button>
+    </div>
+  </div>
+</div>
+<!-- BULK REMIND PASSWORD MODAL -->
+<div class="modal-backdrop" id="bulk-pass-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Confirm Bulk Reminder</div>
+      <div class="modal-sub">Password required to send bulk reminders</div>
+    </div>
+    <div class="modal-body">
+      <div style="background:rgba(213,35,33,0.1);border:1px solid rgba(213,35,33,0.3);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#ff8a88;">
+        ⚠ This will send reminder emails to multiple members. Enter the leadership password to continue.
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Leadership Password</label>
+        <input id="bulk-pass-input" type="password" placeholder="Enter password"
+          style="width:100%;padding:11px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;letter-spacing:2px;"
+          onkeydown="if(event.key==='Enter')confirmBulkPass()">
+        <div id="bulk-pass-error" style="color:#ff8a88;font-size:12px;margin-top:8px;min-height:16px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeBulkPassModal()">Cancel</button>
+      <button class="btn-send" onclick="confirmBulkPass()">Confirm →</button>
+    </div>
+  </div>
+</div>
+<!-- BULK REMIND MODAL -->
+<div class="modal-backdrop" id="bulk-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Bulk Reminder</div>
+      <div class="modal-sub">Send to all members with outstanding balances</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-info-box" id="bulk-modal-info"></div>
+      <div class="modal-note">A reminder email will be sent to every member currently shown in the table who has an outstanding balance. This respects the current filter — if you have "Unpaid" selected, only unpaid members get the reminder.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeBulkModal()">Cancel</button>
+      <button class="btn-send" id="bulk-send-btn" onclick="sendBulkReminders()">Send All Reminders →</button>
+    </div>
+  </div>
+</div>
+<!-- REMINDER MODAL -->
+<div class="modal-backdrop" id="remind-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Send Reminder</div>
+      <div class="modal-sub">Registration Fee Outstanding</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-info-box" id="modal-member-info"></div>
+      <div class="modal-note">A friendly reminder email will be sent directly to this member with their Zelle payment instructions and Member ID. No further action needed from you.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-send" onclick="sendReminder()">Send Reminder Email →</button>
+    </div>
+  </div>
+</div>
+<script>
+const SCRIPT_URL  = "https://script.google.com/macros/s/AKfycbwyZejHw475lEKJitdrcQVvCz2enKCtPVZO35_qBv6t_nWI8JapUHwh6zi2vZxwh2FSng/exec";
+const SESSION_TTL = 8 * 60 * 60 * 1000;
+const GOOGLE_CLIENT_ID = "703408034852-6l0ofo593604p3jc1frn0t90prp6se87.apps.googleusercontent.com";
+const APPROVED_EMAILS = [
+  "alexmandala16@gmail.com",
+  "chidzeronkumba@gmail.com",
+  "chinkhoma@yahoo.com",
+  "admin@mgwirizano.net",
+  "mgwirizano2026@gmail.com"
+];
+// ── BULK REMIND PASSWORD ── Change this to your chosen password
+const BULK_REMIND_PASSWORD = "MW2026!";
+function checkSession() {
+  const ts  = sessionStorage.getItem("mw_ts");
+  const tok = sessionStorage.getItem("mw_tok");
+  if (ts && tok && (Date.now() - parseInt(ts)) < SESSION_TTL &&
+      APPROVED_EMAILS.some(e => tok === "google_" + e)) {
+    unlockApp(false); return;
+  }
+  initGoogleSignIn();
+}
+function initGoogleSignIn() {
+  if (!window.google || !window.google.accounts) { setTimeout(initGoogleSignIn, 500); return; }
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleSignIn, auto_select: false, cancel_on_tap_outside: false });
+  google.accounts.id.renderButton(document.getElementById("g_signin_btn"), { theme: "filled_blue", size: "large", width: 280, text: "signin_with" });
+}
+function handleGoogleSignIn(response) {
+  try {
+    const payload = JSON.parse(atob(response.credential.split(".")[1]));
+    const email = payload.email || "", name = payload.name || "";
+    if (APPROVED_EMAILS.map(e => e.toLowerCase()).includes(email.toLowerCase())) {
+      sessionStorage.setItem("mw_ts", Date.now().toString());
+      sessionStorage.setItem("mw_tok", "google_" + email.toLowerCase());
+      sessionStorage.setItem("mw_method", "google");
+      sessionStorage.setItem("mw_name", name);
+      unlockApp(true);
+    } else {
+      document.getElementById("google-error").textContent = "Access denied — " + email + " is not an approved leadership account.";
+      setTimeout(() => document.getElementById("google-error").textContent = "", 5000);
+    }
+  } catch(e) { document.getElementById("google-error").textContent = "Sign-in failed. Please try again or contact leadership."; }
+}
+function unlockApp(animate) {
+  const name = sessionStorage.getItem("mw_name");
+  if (name) { const sub = document.querySelector(".header-sub"); if (sub) sub.textContent = "Signed in as " + name.split(" ")[0]; }
+  const lock = document.getElementById("lock-screen"), app = document.getElementById("app");
+  if (animate) { lock.classList.add("fade-out"); setTimeout(() => { lock.style.display="none"; app.style.display="block"; loadDashboard(); }, 500); }
+  else { lock.style.display="none"; app.style.display="block"; loadDashboard(); }
+}
+let allMembers = [], currentFilter = "all", pendingRemind = null, dashData = null;
+const AUTO_REFRESH_MS = 15 * 60 * 1000;
+let ftBusy = false; // true while a Fix Tool submission is in flight
+
+// ── AUTO-REFRESH — skips itself while the Fix Tool is in use ─
+// (a field is focused, has text in it, or a fix is currently
+// running) so it never wipes out what you're typing or mid-run.
+// Checks again after 30s instead of the full 5 minutes while busy.
+function isFixToolBusy() {
+  if (ftBusy) return true;
+  const ft = document.getElementById("sec-fixtool");
+  if (!ft) return false;
+  const active = document.activeElement;
+  if (active && ft.contains(active)) return true;
+  const inputs = ft.querySelectorAll("input");
+  for (const inp of inputs) {
+    if (inp.type === "checkbox") continue;
+    if (inp.value && inp.value.trim() !== "") return true;
+  }
+  return false;
+}
+function scheduleAutoRefresh(delay) {
+  clearTimeout(window._autoRefreshTimer);
+  window._autoRefreshTimer = setTimeout(() => {
+    if (isFixToolBusy()) {
+      scheduleAutoRefresh(30 * 1000);
+    } else {
+      loadDashboard();
+    }
+  }, delay);
+}
+function fmt(n) { return Math.round(n).toLocaleString(); }
+function fmtAmt(n) { return "$" + parseFloat(n||0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
+
+// ── SMALL SVG VISUAL — fed by real numbers, no fabricated data ──
+function donutSvg(valueA, valueB, colorA, colorB) {
+  const total = valueA + valueB;
+  const r = 22, c = 2 * Math.PI * r;
+  const pctA = total > 0 ? valueA / total : 0;
+  const segA = c * pctA;
+  return `<svg width="52" height="52" viewBox="0 0 56 56">
+    <circle cx="28" cy="28" r="${r}" fill="none" stroke="${colorB}" stroke-width="7"/>
+    <circle cx="28" cy="28" r="${r}" fill="none" stroke="${colorA}" stroke-width="7"
+      stroke-dasharray="${segA.toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 28 28)"/>
+  </svg>`;
+}
+function initials(name) { return (name||"?").split(" ").slice(0,2).map(w=>w[0]).join("").toUpperCase(); }
+function loadDashboard() {
+  document.getElementById("last-updated").textContent = "Refreshing…";
+  document.getElementById("main-content").innerHTML = `<div class="loading-state"><div class="spinner"></div><div class="loading-text">Fetching live data…</div></div>`;
+  const cb = "cb_" + Date.now();
+  let fired = false;
+  window[cb] = d => { fired = true; dashData = d; render(d); delete window[cb]; };
+  setTimeout(() => {
+    if (fired) return;
+    delete window[cb];
+    document.getElementById("main-content").innerHTML =
+      `<div class="error-box">⚠ Request timed out — data server did not respond in 25s.<br><br>
+       <strong style="color:#ff8a88">Check:</strong><br>
+       <span style="font-size:13px">1. Web App deployed as <strong>"Anyone"</strong> in Apps Script?<br>
+       2. System ON in SETTINGS sheet?<br>
+       3. Test URL directly:</span><br>
+       <a href="${SCRIPT_URL}?action=dashboard&callback=test" target="_blank"
+         style="font-size:10px;color:#a8d880;word-break:break-all;display:block;margin-top:8px;padding:8px;background:rgba(0,0,0,0.3);border-radius:6px">
+         ${SCRIPT_URL}?action=dashboard&callback=test</a></div>`;
+    document.getElementById("last-updated").textContent = "Timed out";
+    document.querySelector(".status-dot").style.background = "var(--red)";
+    document.querySelector(".status-pill span").textContent = "Timeout";
+  }, 25000);
+  const s = document.createElement("script");
+  s.src = SCRIPT_URL + "?action=dashboard&callback=" + cb;
+  document.body.appendChild(s);
+  setTimeout(() => { try{document.body.removeChild(s);}catch(e){} }, 30000);
+}
+function render(d) {
+  allMembers = d.members || [];
+  const total = d.totalMembers || 0, cap = d.capacity || 0;
+  const capPct = Math.min(100, Math.round((d.totalCollected / 3000) * 100));
+  document.getElementById("last-updated").textContent = "Updated " + new Date(d.updated).toLocaleTimeString();
+  document.getElementById("footer-time").textContent = new Date(d.updated).toLocaleString();
+  document.getElementById("footer").style.display = "block";
+  const eligPct = total > 0 ? Math.round(d.eligible / total * 100) : 0;
+  const atPct   = total > 0 ? Math.round(d.atRisk   / total * 100) : 0;
+  const inelPct = total > 0 ? Math.round(d.ineligible / total * 100) : 0;
+  const activeFundsHtml = (d.activeFunds && d.activeFunds.length > 0)
+    ? d.activeFunds.map(f => {
+        const target = total * f.amount, pct = target > 0 ? Math.min(100, Math.round(f.collected/target*100)) : 0;
+        const daysLeft = f.deadline ? Math.ceil((new Date(f.deadline) - new Date()) / 86400000) : null;
+        return `<div class="fund-item"><span class="fund-badge">ACTIVE</span><div class="fund-name">${f.code} — ${f.deceased}</div>
+          <div class="fund-progress-wrap"><div class="fund-progress" style="width:${pct}%"></div></div>
+          <div class="fund-meta"><span>${fmtAmt(f.collected)} collected (${pct}%)</span>
+          <span>$${f.amount}/member${daysLeft!==null?' · '+(daysLeft>0?daysLeft+'d left':'CLOSED'):''}</span></div></div>`;
+      }).join("") : '<div class="empty">No active funeral funds</div>';
+  const recentHtml = (d.recentPayments && d.recentPayments.length > 0)
+    ? d.recentPayments.map(p => `
+        <div class="payment-row">
+          <div class="payment-avatar">${initials(p.name)}</div>
+          <div style="flex:1;min-width:0"><div class="payment-name">${p.name}</div>
+          <div class="payment-meta">${p.id} · ${p.type}</div></div>
+          <div class="payment-amount">${fmtAmt(p.amount)}</div>
+          <div class="payment-date">${p.date}</div>
+        </div>`).join("") : '<div class="empty">No recent payments on record</div>';
+  const pulseItems = [];
+  if (d.atRisk > 0) pulseItems.push({ icon:'⚠️', cls:'high', title: d.atRisk + ' member' + (d.atRisk!==1?'s':'') + ' at risk', sub:'Partial payment — review eligibility' });
+  if (d.partialCount > 0) pulseItems.push({ icon:'⏳', cls:'med', title: d.partialCount + ' partial payment' + (d.partialCount!==1?'s':''), sub:'Balance outstanding on registration fee' });
+  if (d.unpaidCount > 0) pulseItems.push({ icon:'👤', cls:'low', title: d.unpaidCount + ' member' + (d.unpaidCount!==1?'s':'') + ' unpaid', sub:'No registration payment on file yet' });
+  const pulseHtml = pulseItems.length
+    ? pulseItems.map(p => `<div class="pulse-item"><div class="pulse-icon ${p.cls}">${p.icon}</div><div><div class="pulse-title">${p.title}</div><div class="pulse-sub">${p.sub}</div></div></div>`).join("")
+    : '<div class="empty">✓ Nothing needs attention</div>';
+
+  document.getElementById("main-content").innerHTML = `
+    <div class="stats-grid" id="sec-overview">
+      <div class="stat-card green"><div class="stat-icon">🏦</div><div class="stat-label">Bank Balance</div><div class="stat-value" style="font-size:32px;letter-spacing:1px">${fmtAmt(d.totalCollected - (d.totalPayouts || 0))}</div><div class="stat-sub">${fmtAmt(d.totalPayouts || 0)} paid out from PAYOUTS tab</div></div>
+      <div class="stat-card green clickable" onclick="statCardClick('PAID')"><div class="stat-icon">✅</div><div class="stat-label">Reg fee paid</div><div class="stat-value">${d.paidCount}</div><div class="stat-sub">${Math.round(d.paidCount/Math.max(1,total)*100)}% of members</div></div>
+      <div class="stat-card red clickable" onclick="statCardClick('OUTSTANDING')"><div class="stat-icon">⚠️</div><div class="stat-label">Outstanding</div><div class="stat-value">${d.unpaidCount + d.partialCount}</div><div class="stat-sub">${d.partialCount} partial · ${d.unpaidCount} unpaid</div></div>
+      <div class="stat-card green"><div class="stat-icon">📬</div><div class="stat-label">Total collected</div><div class="stat-value" style="font-size:32px;letter-spacing:1px">${fmtAmt(d.totalCollected)}</div><div class="stat-sub">${fmtAmt(d.thisMonthCollected)} this month</div></div>
+      <div class="stat-card gold" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div style="flex:1"><div class="stat-icon">📋</div><div class="stat-label">Breakdown</div>
+        <div style="margin-top:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase">Reg fees</span><span style="color:var(--glight);font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px">${fmtAmt(d.regCollected || 0)}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase">Funeral</span><span style="color:#f0c050;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px">${fmtAmt(d.funeralCollected || 0)}</span></div>
+        </div>
+        <div class="stat-sub" style="margin-top:4px">${d.activeFunds ? d.activeFunds.length : 0} active fund${(d.activeFunds && d.activeFunds.length !== 1) ? "s" : ""}</div>
+        </div>
+        ${donutSvg(d.regCollected || 0, d.funeralCollected || 0, '#4ade80', '#f0c050')}
+      </div>
+      <div class="stat-card navy clickable" onclick="statCardClick('FUND')"><div class="stat-icon">💰</div><div class="stat-label">Active funds</div><div class="stat-value">${d.activeFunds ? d.activeFunds.length : 0}</div><div class="stat-sub">${d.activeFunds && d.activeFunds.length ? d.activeFunds.map(function(f){return f.code;}).join(' · ') : 'none active'}</div></div>
+    </div>
+    <div class="card" style="margin-bottom:22px">
+      <div class="card-header"><span class="card-title">Member Lookup</span><span style="font-size:11px;color:var(--text3)">Finds anyone on record — not limited to the current filter or page below</span></div>
+      <div style="padding:14px 20px;display:flex;gap:8px;flex-wrap:wrap">
+        <input id="lookup-input" type="text" placeholder="Member ID or name…" style="flex:1;min-width:200px;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:13px;" onkeydown="if(event.key==='Enter')runMemberLookup()">
+        <button class="btn-refresh" style="background:var(--green2);padding:10px 18px;" onclick="runMemberLookup()">🔍 Look up</button>
+      </div>
+      <div id="lookup-results" style="padding:0 20px 14px"></div>
+    </div>
+    <div class="two-col">
+      <div class="card" id="sec-members">
+        <div class="card-header"><span class="card-title">Member payment status</span><span class="card-count" id="member-count">${total}</span><button class="btn-refresh" style="background:var(--card2);border:1px solid var(--border);padding:5px 12px;font-size:11px;margin-left:auto" onclick="openPaymentsSheet()">📄 View Payments Sheet</button></div>
+        <div class="filter-bar">
+          <button class="filter-btn active" onclick="filterMembers('all',this)">All (${total})</button>
+          <button class="filter-btn green" onclick="filterMembers('PAID',this)">✓ Paid (${d.paidCount})</button>
+          <button class="filter-btn gold" onclick="filterMembers('PARTIAL',this)">~ Partial (${d.partialCount})</button>
+          <button class="filter-btn red" onclick="filterMembers('UNPAID',this)">✗ Unpaid (${d.unpaidCount})</button>
+          <input class="search-input" type="text" placeholder="Search name or ID…" oninput="searchMembers(this.value)">
+          <button class="btn-refresh" style="background:var(--card2);border:1px solid var(--border);padding:6px 12px;font-size:12px;" onclick="exportMembersCSV()">⬇ Export CSV</button>
+          <button class="bulk-remind-btn" id="bulk-remind-btn" onclick="openBulkRemindWithPassword()">✉ Bulk Reminder</button>
+          <span class="bulk-progress" id="bulk-progress"></span>
+        </div>
+        <div class="member-table-wrap">
+          <table class="member-table">
+            <thead><tr><th>ID</th><th>Name</th><th>Location</th><th>Status</th><th>Balance</th><th>Action</th><th></th></tr></thead>
+            <tbody id="member-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="member-pager"></div>
+      </div>
+      <div class="right-col">
+        <div class="card"><div class="card-header"><span class="card-title">Priority pulse</span></div>
+          <div style="padding:6px 20px 4px">${pulseHtml}</div>
+        </div>
+        <div class="card"><div class="card-header"><span class="card-title">Eligibility status</span></div>
+          <div class="elig-bars">
+            <div class="elig-row eligible" onclick="eligClick('PAID')"><span class="elig-label">Eligible</span><div class="elig-bar-wrap"><div class="elig-bar" style="width:0%" data-w="${eligPct}"></div></div><span class="elig-count">${d.eligible}</span></div>
+            <div class="elig-row at-risk" onclick="eligClick('PARTIAL')"><span class="elig-label">At risk</span><div class="elig-bar-wrap"><div class="elig-bar" style="width:0%" data-w="${atPct}"></div></div><span class="elig-count">${d.atRisk}</span></div>
+            <div class="elig-row ineligible" onclick="eligClick('UNPAID')"><span class="elig-label">Ineligible</span><div class="elig-bar-wrap"><div class="elig-bar" style="width:0%" data-w="${inelPct}"></div></div><span class="elig-count">${d.ineligible}</span></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-header"><span class="card-title">Funeral capacity</span></div>
+          <div class="capacity-wrap"><div class="capacity-value">${cap}</div><div class="capacity-label">funerals at $3,000 advance payment</div>
+          <div class="capacity-track"><div class="capacity-fill" style="width:0%" data-w="${Math.min(100,capPct)}"></div></div>
+          <div class="capacity-label">${fmtAmt(d.regCollected||0)} reg + ${fmtAmt(d.funeralCollected||0)} funeral = ${fmtAmt(d.totalCollected)} total</div></div>
+        </div>
+        <div class="card" id="sec-funds"><div class="card-header"><span class="card-title">Active funeral funds</span><span class="card-count">${d.activeFunds ? d.activeFunds.length : 0}</span></div>${activeFundsHtml}</div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Fund Status Report</span></div>
+          <div style="padding:4px 20px 16px">
+            <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">Generates a report and emails it to leadership — the treasurer can run this anytime, no Apps Script access needed.</div>
+            <select id="fr-fundCode" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;margin-bottom:10px;">
+              <option value="">-- Select Fund --</option>
+            </select>
+            <div id="fr-result" style="margin-bottom:10px;font-size:12px;min-height:18px;"></div>
+            <button class="btn-refresh" id="fr-submit-btn" style="background:var(--green2);width:100%;padding:11px;font-size:13px;margin-bottom:8px;" onclick="submitFundReport()">📧 Full Status Report (Paid + Pending)</button>
+            <button class="btn-refresh" id="pr-submit-btn" style="background:var(--card2);border:1px solid var(--border);width:100%;padding:11px;font-size:13px;" onclick="submitPendingReport()">📋 Pending-Only Report</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Fund Management</span></div>
+          <div style="padding:4px 20px 16px">
+            <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">Closes an active fund — stops accepting new contributions toward it. This does not reverse any payments already recorded.</div>
+            <select id="fc-fundCode" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;margin-bottom:10px;">
+              <option value="">-- Select Fund --</option>
+            </select>
+            <div id="fc-result" style="margin-bottom:10px;font-size:12px;min-height:18px;"></div>
+            <button class="btn-refresh" id="fc-submit-btn" style="background:#7a1a1a;width:100%;padding:11px;font-size:13px;" onclick="submitCloseFund()">🔒 Close Fund</button>
+          </div>
+        </div>
+        <div class="card" id="sec-activity"><div class="card-header"><span class="card-title">Recent payments</span></div>${recentHtml}</div>
+        <div class="card" id="sec-health">
+          <div class="card-header"><span class="card-title">Scanner health</span>
+            <span id="scanner-status-badge" style="font-size:11px;padding:3px 10px;border-radius:12px;background:rgba(255,255,255,0.1);color:var(--text2);">Checking…</span>
+          </div>
+          <div id="scanner-health-body" style="padding:10px 0;font-size:13px;color:var(--text2);">Loading…</div>
+        </div>
+        <div class="card" id="pending-updates-card" style="display:none">
+          <div class="card-header"><span class="card-title">Pending member updates</span>
+            <span id="pending-count-badge" style="font-size:11px;padding:3px 10px;border-radius:12px;background:rgba(214,139,12,0.2);color:#f0c050;">0</span>
+          </div>
+          <div id="pending-updates-body" style="padding:10px 0;"></div>
+        </div>
+        <div class="card" id="sec-fixtool">
+          <div class="card-header">
+            <span class="card-title">Maintenance Fix Tool</span>
+          </div>
+          <div style="padding:14px 16px">
+            <div style="background:rgba(214,139,12,0.1);border:1px solid rgba(214,139,12,0.3);border-radius:8px;padding:10px;margin-bottom:14px;font-size:11px;color:#f0c050;">
+              ⚠ Dry Run defaults on — previews without changing anything.
+            </div>
+            <div style="margin-bottom:10px">
+              <label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Fix type</label>
+              <select id="ft-type" onchange="updateFixToolFields()" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                <option value="missing">Missing payment</option>
+                <option value="late">Late payment (fund + $5 fee)</option>
+                <option value="fund">Wrong type (Reg → Fund)</option>
+                <option value="wrong_member">Wrong member</option>
+                <option value="overpayment">Overpayment</option>
+                <option value="credit">Add credit</option>
+                <option value="reverse">Reverse a row only</option>
+              </select>
+            </div>
+            <div style="margin-bottom:12px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer;">
+                <input type="checkbox" id="ft-dryrun" checked style="width:15px;height:15px;">
+                Dry run (preview only)
+              </label>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px" id="ft-grid">
+              <div id="ft-g-memberId"><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Member ID</label>
+                <input id="ft-memberId" placeholder="e.g. MW0217" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;text-transform:uppercase;"></div>
+              <div id="ft-g-wrongId" style="display:none"><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Wrong Member ID</label>
+                <input id="ft-wrongId" placeholder="e.g. MW0025" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;text-transform:uppercase;"></div>
+              <div id="ft-g-correctId" style="display:none"><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Correct Member ID</label>
+                <input id="ft-correctId" placeholder="e.g. MW0012" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;text-transform:uppercase;"></div>
+              <div id="ft-g-amount"><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Amount ($)</label>
+                <input id="ft-amount" type="number" placeholder="15" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+              <div id="ft-g-fundCode" style="display:none"><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Fund</label>
+                <select id="ft-fundCode" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+                  <option value="">-- Select Fund --</option>
+                </select></div>
+              <div id="ft-g-date"><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Date</label>
+                <input id="ft-date" type="date" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+              <div id="ft-g-senderName" style="display:none"><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Sender name</label>
+                <input id="ft-senderName" placeholder="e.g. RODNEY CHIKWANA" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+              <div id="ft-g-row" style="display:none"><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Row number in PAYMENTS</label>
+                <input id="ft-row" type="number" placeholder="e.g. 824" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+              <div id="ft-g-reason" style="display:none"><label style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Reason</label>
+                <input id="ft-reason" placeholder="e.g. Kachingwe contribution" style="width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;"></div>
+              <div id="ft-g-applyToFund" style="display:none">
+                <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer;">
+                  <input type="checkbox" id="ft-applyToFund" checked style="width:15px;height:15px;">
+                  Apply to next unpaid fund (else = credit)
+                </label>
+              </div>
+            </div>
+
+            <div id="ft-result" style="margin-bottom:12px;font-size:12px;min-height:20px;"></div>
+            <button class="btn-refresh" id="ft-submit-btn" style="background:var(--green2);width:100%;padding:11px;font-size:13px;" onclick="submitFixTool()">Run Fix →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="sec-payments-sheet" style="margin-top:16px">
+      <div class="card-header">
+        <span class="card-title">Full Payments Sheet</span>
+        <span class="card-count" id="payments-sheet-count">—</span>
+        <button class="btn-refresh" style="background:var(--card2);border:1px solid var(--border);padding:5px 12px;font-size:11px;margin-left:auto" onclick="loadPaymentsSheet(true)">↻ Refresh</button>
+      </div>
+      <div id="payments-sheet-body" style="padding:16px 20px;">
+        <div style="font-size:12px;color:var(--text2);text-align:center;padding:20px 0;">Click "View Payments Sheet" above the member table to load this.</div>
+      </div>
+    </div>
+    <div class="card" id="sec-payouts" style="margin-top:16px">
+      <div class="card-header">
+        <span class="card-title">Fund Payouts</span>
+        <span class="card-count" id="payouts-count">—</span>
+        <button class="btn-refresh" style="background:var(--green2);padding:5px 14px;font-size:11px;margin-left:auto" onclick="openAddPayoutModal()">+ Add Payout</button>
+      </div>
+      <div id="payouts-body" style="padding:16px 20px;">
+        <div style="font-size:12px;color:var(--text2);text-align:center;padding:20px 0;">Loading…</div>
+      </div>
+    </div>`;
+  renderMemberTable(allMembers);
+  populateFixToolFunds(d.activeFunds);
+  updateFixToolFields();
+  populateFundReportDropdown(d.activeFunds);
+  populateFundCloseDropdown(d.activeFunds);
+  setTimeout(() => { document.querySelectorAll("[data-w]").forEach(el => el.style.width = el.getAttribute("data-w") + "%"); }, 100);
+  scheduleAutoRefresh(AUTO_REFRESH_MS);
+  loadScannerHealth();
+  loadPendingUpdates();
+  loadPayouts();
+}
+let filteredMembers = [];
+let memberPage = 0;
+const MEMBERS_PER_PAGE = 50;
+
+// ── MEMBER LOOKUP — searches the full member list, ignoring
+// whatever filter/page the table below happens to be on. ─────
+function runMemberLookup() {
+  const q = document.getElementById("lookup-input").value.trim().toLowerCase();
+  const resultsEl = document.getElementById("lookup-results");
+  if (!q) { resultsEl.innerHTML = ""; return; }
+
+  const matches = allMembers.filter(m =>
+    (m.id||"").toLowerCase().includes(q) ||
+    (m.name||"").toLowerCase().includes(q) ||
+    (m.email||"").toLowerCase().includes(q)
+  );
+
+  if (!matches.length) {
+    resultsEl.innerHTML = '<div style="padding:10px 0;font-size:13px;color:var(--text3)">No member found matching "' + q.replace(/</g,'&lt;') + '"</div>';
+    return;
+  }
+  if (matches.length === 1) {
+    openDrawer(matches[0].id, matches[0].name);
+    resultsEl.innerHTML = "";
+    document.getElementById("lookup-input").value = "";
+    return;
+  }
+  resultsEl.innerHTML = '<div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">' + matches.length + ' matches — pick one</div>' +
+    matches.slice(0, 10).map(m =>
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;cursor:pointer;background:var(--card2);margin-bottom:4px" onclick="openDrawer(\'' + m.id + '\',\'' + (m.name||'').replace(/'/g,"\\'") + '\')">' +
+      '<span><strong>' + m.id + '</strong> — ' + (m.name||'') + '</span>' +
+      '<span style="font-size:11px;color:var(--text3)">' + (m.location||'') + '</span></div>'
+    ).join('');
+}
+
+function renderMemberTable(members) {
+  filteredMembers = members;
+  memberPage = 0;
+  renderMemberPage();
+}
+
+function renderMemberPage() {
+  const tbody = document.getElementById("member-tbody");
+  if (!tbody) return;
+  const count = document.getElementById("member-count");
+  if (count) count.textContent = filteredMembers.length;
+  if (!filteredMembers.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text3);">No members match this filter</td></tr>`;
+    renderMemberPager();
+    return;
+  }
+  const start = memberPage * MEMBERS_PER_PAGE;
+  const pageItems = filteredMembers.slice(start, start + MEMBERS_PER_PAGE);
+  tbody.innerHTML = pageItems.map(m => {
+    const badge    = `badge ${m.regStatus==="PAID"?"paid":m.regStatus==="PARTIAL"?"partial":"unpaid"}`;
+    const balClass = m.regBalance > 0 ? "balance-cell owed" : "balance-cell clear";
+    const balText  = m.regBalance > 0 ? "-" + fmtAmt(m.regBalance) : "✓ Paid";
+    const showBtn  = m.regStatus !== "PAID";
+    const sn = (m.name||"").replace(/'/g,"\\'"), se = (m.email||"").replace(/'/g,"\\'");
+    return `<tr>
+      <td class="id-cell">${m.id}</td>
+      <td class="name-cell"><a class="name-link" onclick="openDrawer('${m.id}','${sn}')" href="javascript:void(0)">${m.name}</a></td>
+      <td style="font-size:12px;color:var(--text2)">${m.location||"—"}</td>
+      <td><span class="${badge}">${m.regStatus}</span></td>
+      <td class="${balClass}">${balText}</td>
+      <td>${showBtn ? `<button class="remind-btn" id="rb-${m.id}" onclick="openRemind('${m.id}','${sn}','${se}',${m.regBalance})">Send reminder</button>` : '<span style="color:var(--text3);font-size:12px;">—</span>'}</td>
+      <td><button class="fix-row-btn" onclick="prefillFixTool('${m.id}')">Fix</button></td>
+    </tr>`;
+  }).join("");
+  renderMemberPager();
+}
+
+function renderMemberPager() {
+  const pager = document.getElementById("member-pager");
+  if (!pager) return;
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / MEMBERS_PER_PAGE));
+  if (totalPages <= 1) { pager.innerHTML = ""; return; }
+  pager.innerHTML = `
+    <button class="pager-btn" onclick="changeMemberPage(-1)" ${memberPage===0?"disabled":""}>← Prev</button>
+    <span>Page ${memberPage+1} of ${totalPages} (${filteredMembers.length} members)</span>
+    <button class="pager-btn" onclick="changeMemberPage(1)" ${memberPage>=totalPages-1?"disabled":""}>Next →</button>`;
+}
+
+function changeMemberPage(dir) {
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / MEMBERS_PER_PAGE));
+  memberPage = Math.min(totalPages - 1, Math.max(0, memberPage + dir));
+  renderMemberPage();
+  document.getElementById("sec-members").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function prefillFixTool(id) {
+  const el = document.getElementById("ft-memberId");
+  if (el) el.value = id;
+  scrollToSection("sec-fixtool");
+}
+
+// ── Jump to Fix Tool straight from a member's drawer, prefilled
+// with everything already visible on screen: their ID, the specific
+// fund they owe, and the exact amount — so an admin who spots a
+// missing payment while looking someone up doesn't have to scroll
+// down and re-enter what's already right in front of them. ──────
+function prefillFixToolForFund(memberId, fundCode, amount) {
+  document.getElementById("ft-type").value = "missing";
+  updateFixToolFields();
+  document.getElementById("ft-memberId").value = memberId;
+  document.getElementById("ft-amount").value = amount;
+  const fundSel = document.getElementById("ft-fundCode");
+  if (fundSel) fundSel.value = fundCode;
+  // Always force Dry Run back on here, regardless of whatever state
+  // it was left in — this shortcut fires straight from a member's
+  // profile, so it should always land on a preview first, never
+  // silently inherit an unchecked box from an earlier fix this session.
+  document.getElementById("ft-dryrun").checked = true;
+  closeDrawer();
+  scrollToSection("sec-fixtool");
+}
+
+function exportMembersCSV() {
+  const rows = [["Member ID","Name","Location","Status","Balance"]];
+  filteredMembers.forEach(m => {
+    rows.push([m.id, m.name||"", m.location||"", m.regStatus||"", m.regBalance||0]);
+  });
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "mw_members_" + new Date().toISOString().slice(0,10) + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function filterMembers(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  const q = (document.querySelector(".search-input")||{}).value || "";
+  applyFilters(q.toLowerCase(), status);
+}
+function searchMembers(q) { applyFilters(q.toLowerCase(), currentFilter); }
+function applyFilters(q, status) {
+  let f = allMembers;
+  if (status !== "all") f = f.filter(m => m.regStatus === status);
+  if (q) f = f.filter(m => (m.name||"").toLowerCase().includes(q) || (m.id||"").toLowerCase().includes(q) || (m.email||"").toLowerCase().includes(q));
+  renderMemberTable(f);
+}
+let drawerOpen = false;
+function openDrawer(memberId, memberName) {
+  document.getElementById("drawer-name").textContent = memberName;
+  document.getElementById("drawer-id").textContent   = memberId;
+  document.getElementById("drawer-body").innerHTML   = `<div class="drawer-loading"><div class="spinner"></div>Fetching member data…</div>`;
+  document.getElementById("drawer-backdrop").classList.add("open");
+  document.getElementById("member-drawer").classList.add("open");
+  drawerOpen = true; document.body.style.overflow = "hidden";
+  const cb = "detail_" + Date.now();
+  let drawerFired = false;
+  window[cb] = function(data) { drawerFired = true; renderDrawer(data); delete window[cb]; };
+  setTimeout(() => {
+    if (drawerFired) return;
+    delete window[cb];
+    document.getElementById("drawer-body").innerHTML = `<div style="padding:40px;text-align:center;color:#ff8a88;">Request timed out loading member data.<br><br><small>Check your internet connection and try again.</small></div>`;
+  }, 20000);
+  const s = document.createElement("script");
+  s.src = SCRIPT_URL + "?action=member_detail&memberId=" + encodeURIComponent(memberId) + "&callback=" + cb;
+  document.body.appendChild(s);
+  setTimeout(() => { try{document.body.removeChild(s);}catch(e){} }, 25000);
+}
+function closeDrawer() {
+  document.getElementById("drawer-backdrop").classList.remove("open");
+  document.getElementById("member-drawer").classList.remove("open");
+  document.body.style.overflow = ""; drawerOpen = false;
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape" && drawerOpen) closeDrawer(); });
+function renderDrawer(d) {
+  if (!d || d.status !== "ok") { document.getElementById("drawer-body").innerHTML = `<div style="padding:40px;text-align:center;color:#ff8a88;">Member not found or data error.</div>`; return; }
+  let eligClass, eligIcon, eligTitle, eligDesc;
+  if (d.fullyEligible) { eligClass="eligible"; eligIcon="✅"; eligTitle="Fully Eligible"; eligDesc="Registration fee paid. Past 120-day waiting period. This member is covered."; }
+  else if (d.inWaitingPeriod) { eligClass="waiting"; eligIcon="⏳"; eligTitle="Waiting Period"; eligDesc=`Registration fee paid. ${d.daysRemaining120} days remaining in 120-day waiting period (joined ${d.joinDate}).`; }
+  else if (d.regStatus==="PARTIAL") { eligClass="at-risk"; eligIcon="⚠️"; eligTitle="At Risk — Partial Payment"; eligDesc=`${fmtAmt(d.totalRegCovered)} paid of ${fmtAmt(d.regFee)} registration fee. ${fmtAmt(d.regBalance)} still outstanding.`; }
+  else { eligClass="ineligible"; eligIcon="🚫"; eligTitle="Ineligible — No Payment"; eligDesc=`Registration fee of ${fmtAmt(d.regFee)} has not been paid. Member is not covered by the funeral fund.`; }
+  const creditHtml = `<div class="credit-breakdown">
+    <div class="credit-row"><span class="credit-label">Registration fee</span><span class="credit-val neg">-${fmtAmt(d.regFee)}</span></div>
+    <div class="credit-row"><span class="credit-label">Cash payments received</span><span class="credit-val pos">+${fmtAmt(d.regPaidCash)}</span></div>
+    ${d.priorContrib>0?`<div class="credit-row"><span class="credit-label">Prior contribution credit</span><span class="credit-val pos">+${fmtAmt(d.priorContrib)}</span></div>`:""}
+    <div class="credit-row credit-total"><span class="credit-label">Registration balance</span><span class="credit-val ${d.regBalance<=0?'pos':'neg'}">${d.regBalance<=0?'✓ Paid':'-'+fmtAmt(d.regBalance)}</span></div>
+  </div>`;
+  // Funeral fund credit — ALWAYS shown, even at $0, so admins can
+  // verify at a glance whether an overpayment/excess note actually
+  // became a real stored credit or was just descriptive text. This
+  // used to be hidden entirely whenever the value was 0, which made
+  // it impossible to tell "no credit" apart from "credit not loading."
+  const funeralCreditHtml = `<div class="credit-breakdown">
+    <div class="credit-row credit-total"><span class="credit-label">Funeral fund credit (stored for next contribution)</span><span class="credit-val ${d.funeralCredit>0?'pos':'zero'}">${d.funeralCredit>0?'+'+fmtAmt(d.funeralCredit):'$0'}</span></div>
+  </div>`;
+  const paymentsHtml = d.payments && d.payments.length > 0
+    ? d.payments.map(p => {
+        const dotClass = p.type==="Registration Fee"?"reg":p.type==="Funeral Contribution"?"funeral":"credit";
+        const reversed = p.status === "REVERSED";
+        const canReverse = p.row && !reversed;
+        return `<div class="ph-row"><div class="ph-dot ${dotClass}"></div>
+          <div class="ph-info"><div class="ph-type">${p.type}${reversed?' <span style="color:#ff8a88;font-size:11px;">(reversed)</span>':''}</div>
+          <div class="ph-meta">${p.fund!==p.type?p.fund+" · ":""}${p.status}${p.memo&&p.memo!=="(no memo)"?' · <em style="color:var(--text3)">'+p.memo+'</em>':''}</div></div>
+          <div class="ph-amount">${fmtAmt(p.amount)}</div><div class="ph-date">${p.date}</div>
+          ${canReverse?`<button onclick="reverseFromDrawer(${p.row},${p.amount},'${p.type}')" style="margin-left:8px;background:rgba(213,35,33,0.15);border:1px solid rgba(213,35,33,0.3);border-radius:6px;padding:4px 8px;font-size:10px;color:#ff8a88;cursor:pointer;white-space:nowrap;">Reverse</button>`:''}</div>`;
+      }).join("") : '<div style="padding:16px 0;font-size:13px;color:var(--text3);">No payment history on record.</div>';
+  const fundsHtml = d.activeFunds && d.activeFunds.length > 0
+    ? `<div class="credit-breakdown">${d.activeFunds.map(f=>`<div class="fund-status-row"><span class="fsr-code">${f.fund}</span><span style="font-size:12px;color:var(--text2)">${f.status==="EXEMPT"?"Bereaved — exempt":f.status==="PAID"?"Paid":fmtAmt(f.balance)+" owed by "+f.deadline}</span>${f.status!=="EXEMPT"&&f.status!=="PAID"?`<button onclick="prefillFixToolForFund('${d.memberId}','${f.fund}',${f.balance})" style="margin-left:8px;background:rgba(33,123,49,0.2);border:1px solid rgba(33,123,49,0.4);border-radius:6px;padding:3px 9px;font-size:10px;color:var(--gmid);cursor:pointer;white-space:nowrap;">+ Add Payment</button>`:''}<span class="fsr-badge ${f.status.toLowerCase()}">${f.status}</span></div>`).join("")}</div>`
+    : '<div style="font-size:13px;color:var(--text3);padding:8px 0;">No active funeral funds.</div>';
+  const showRemindBtn = d.regStatus !== "PAID";
+  const sn = (d.name||"").replace(/'/g,"\\'"), se = (d.email||"").replace(/'/g,"\\'");
+  function parseBeneNames(val) {
+    if (!val) return [];
+    var v = val.toString().trim();
+    if (!v||v.toLowerCase()==="n/a"||v.toLowerCase()==="none") return [];
+    return v.split(/\n|[,;]|\d+\.\s+/).map(p=>p.replace(/\s*(full|step|half|\(same|\(different).*$/i,"").trim().split(/\s+/)[0]).filter(n=>n&&n.length>1);
+  }
+  const benes = [
+    {icon:"👨",label:"Father",  names:d.fatherName?[d.fatherName.split(" ")[0]]:[]},
+    {icon:"👩",label:"Mother",  names:d.motherName?[d.motherName.split(" ")[0]]:[]},
+    {icon:"💑",label:"Spouse",  names:d.spouse?[d.spouse.split(" ")[0]]:[]},
+    {icon:"👶",label:"Child",   names:parseBeneNames(d.children)},
+    {icon:"👫",label:"Sibling", names:parseBeneNames(d.siblings)},
+  ];
+  const beneRows = benes.flatMap(b=>b.names.map(n=>`<div class="ph-row" style="align-items:center;"><div style="width:32px;height:32px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${b.icon}</div><div class="ph-info"><div class="ph-type">${n}</div><div class="ph-meta">${b.label}</div></div></div>`));
+  const beneHtml = beneRows.length>0?beneRows.join(""):`<div style="padding:20px 0;text-align:center;font-size:13px;color:var(--text3);">No beneficiaries on file.</div>`;
+  document.getElementById("drawer-name").textContent = d.name;
+  document.getElementById("drawer-id").textContent   = d.memberId + " · Joined " + d.joinDate + " · " + d.daysSinceJoin + " days ago";
+  document.getElementById("drawer-body").innerHTML = `
+    <div class="drawer-tabs">
+      <div class="drawer-tab active" onclick="switchDrawerTab('overview',this)">Overview</div>
+      <div class="drawer-tab" onclick="switchDrawerTab('payments',this)">Payments</div>
+      <div class="drawer-tab" onclick="switchDrawerTab('beneficiaries',this)">Family</div>
+    </div>
+    <div class="drawer-tab-content active" id="dtab-overview">
+      <div class="elig-banner ${eligClass}"><div class="elig-icon">${eligIcon}</div><div><div class="elig-title">${eligTitle}</div><div class="elig-desc">${eligDesc}</div></div></div>
+      <div class="ds-head">Member profile</div>
+      <div class="profile-grid">
+        <div class="pf-item"><div class="pf-label">Email</div><div class="pf-value" style="font-size:12px;word-break:break-all">${d.email||"—"}</div></div>
+        <div class="pf-item"><div class="pf-label">Phone</div><div class="pf-value">${d.phone||"—"}</div></div>
+        <div class="pf-item"><div class="pf-label">Location</div><div class="pf-value">${d.location||"—"}</div></div>
+        <div class="pf-item"><div class="pf-label">Gender</div><div class="pf-value">${d.gender||"—"}</div></div>
+        <div class="pf-item"><div class="pf-label">Member since</div><div class="pf-value">${d.joinDate||"—"}</div></div>
+        <div class="pf-item"><div class="pf-label">Days as member</div><div class="pf-value">${d.daysSinceJoin}</div></div>
+      </div>
+      <div class="ds-head">Registration & credit</div>${creditHtml}
+      <div class="ds-head">Funeral Fund Credit</div>${funeralCreditHtml}
+      <div class="ds-head">Active fund obligations</div>${fundsHtml}
+      ${showRemindBtn?`<div class="drawer-actions"><button class="drawer-remind-btn" id="drawer-remind-btn" onclick="drawerRemind('${d.memberId}','${sn}','${se}',${d.regBalance})">✉ Send Reminder — ${fmtAmt(d.regBalance)} outstanding</button></div>`:`<div class="drawer-actions"><div style="flex:1;padding:12px;text-align:center;font-size:13px;color:var(--gmid);background:rgba(33,123,49,0.1);border-radius:8px;border:1px solid rgba(33,123,49,0.2);">✅ Registration fee fully paid — no reminder needed</div></div>`}
+    </div>
+    <div class="drawer-tab-content" id="dtab-payments">
+      <div class="ds-head" style="margin-top:0">Full payment history (${d.paymentCount} record${d.paymentCount!==1?"s":""})</div>
+      <div>${paymentsHtml}</div>
+    </div>
+    <div class="drawer-tab-content" id="dtab-beneficiaries">
+      <div class="ds-head" style="margin-top:0">Declared family members</div>
+      <div style="background:rgba(33,123,49,0.08);border:1px solid rgba(33,123,49,0.2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.6;">Only declared members are eligible for funeral fund coverage.</div>
+      ${beneHtml}
+    </div>`;
+}
+function switchDrawerTab(name, el) {
+  document.querySelectorAll(".drawer-tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".drawer-tab-content").forEach(c=>c.classList.remove("active"));
+  el.classList.add("active");
+  const tc = document.getElementById("dtab-"+name);
+  if (tc) tc.classList.add("active");
+}
+function drawerRemind(id,name,email,balance) { openRemind(id,name,email,balance); }
+function openRemind(id,name,email,balance) {
+  pendingRemind = {id,name,email,balance};
+  document.getElementById("bulk-pass-input").value = "";
+  document.getElementById("bulk-pass-error").textContent = "";
+  window._pendingRemindType = "individual";
+  // Update modal text for individual reminder
+  document.querySelector("#bulk-pass-modal .modal-title").textContent = "Send Reminder";
+  document.querySelector("#bulk-pass-modal .modal-sub").textContent = "Password required to send reminder";
+  document.querySelector("#bulk-pass-modal .modal-body div:first-child").innerHTML =
+    "🔒 Enter the leadership password to send a reminder to <strong>" + name + "</strong>.";
+  document.querySelector("#bulk-pass-modal .modal-body div:first-child").style.cssText =
+    "background:rgba(214,139,12,0.1);border:1px solid rgba(214,139,12,0.3);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#f0c050;";
+  document.getElementById("bulk-pass-modal").classList.add("open");
+  setTimeout(() => document.getElementById("bulk-pass-input").focus(), 200);
+}
+function _openRemindModal() {
+  const {id,name,email,balance} = pendingRemind;
+  document.getElementById("modal-member-info").innerHTML = `<strong>${name}</strong> (${id})<br>Email: ${email||'<em style="color:var(--text2)">no email on file</em>'}<br>Outstanding: <strong style="color:#ff8a88">${fmtAmt(balance)}</strong>`;
+  document.getElementById("remind-modal").classList.add("open");
+}
+function closeModal() { document.getElementById("remind-modal").classList.remove("open"); pendingRemind = null; }
+function sendReminder() {
+  if (!pendingRemind) return;
+  const {id,name,email,balance} = pendingRemind;
+  closeModal();
+  const updateBtn = (selector,text,cls) => { const b=document.getElementById(selector); if(b){b.textContent=text;b.className=cls;b.disabled=true;} };
+  updateBtn("rb-"+id,"Sending…","remind-btn");
+  updateBtn("drawer-remind-btn","Sending…","drawer-remind-btn");
+  const cb = "remind_" + Date.now();
+  window[cb] = resp => {
+    const ok = resp && resp.status==="ok";
+    updateBtn("rb-"+id,ok?"✓ Sent!":"⚠ Error","remind-btn sent");
+    const drb = document.getElementById("drawer-remind-btn");
+    if(drb){drb.textContent=ok?"✓ Reminder Sent!":"⚠ Error — retry";drb.className="drawer-remind-btn sent";drb.disabled=false;}
+    delete window[cb];
+  };
+  const s = document.createElement("script");
+  s.src = SCRIPT_URL + "?action=remind&memberId=" + encodeURIComponent(id) + "&callback=" + cb;
+  document.body.appendChild(s);
+  setTimeout(() => { const b=document.getElementById("rb-"+id); if(b&&b.textContent==="Sending…"){b.textContent="✓ Sent!";b.className="remind-btn sent";} try{document.body.removeChild(s);}catch(e){} }, 10000);
+}
+// ── BULK REMIND PASSWORD ──────────────────────────────────
+function openBulkRemindWithPassword() {
+  let targets = [];
+  allMembers.forEach(m => {
+    if (m.regStatus !== "PAID" && m.regBalance > 0 && m.email) {
+      const btn = document.getElementById("rb-" + m.id);
+      if (btn) targets.push(m);
+    }
+  });
+  if (targets.length === 0) { showToast("No members with outstanding balances in current view"); return; }
+  window._bulkTargets = targets;
+  window._pendingRemindType = "bulk";
+  document.getElementById("bulk-pass-input").value = "";
+  document.getElementById("bulk-pass-error").textContent = "";
+  // Reset modal text for bulk
+  document.querySelector("#bulk-pass-modal .modal-title").textContent = "Confirm Bulk Reminder";
+  document.querySelector("#bulk-pass-modal .modal-sub").textContent = "Password required to send bulk reminders";
+  document.querySelector("#bulk-pass-modal .modal-body div:first-child").innerHTML =
+    "⚠ This will send reminder emails to multiple members. Enter the leadership password to continue.";
+  document.querySelector("#bulk-pass-modal .modal-body div:first-child").style.cssText =
+    "background:rgba(213,35,33,0.1);border:1px solid rgba(213,35,33,0.3);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#ff8a88;";
+  document.getElementById("bulk-pass-modal").classList.add("open");
+  setTimeout(() => document.getElementById("bulk-pass-input").focus(), 200);
+}
+function closeBulkPassModal() {
+  document.getElementById("bulk-pass-modal").classList.remove("open");
+  document.getElementById("bulk-pass-input").value = "";
+  document.getElementById("bulk-pass-error").textContent = "";
+  window._bulkTargets = [];
+}
+function confirmBulkPass() {
+  const entered = document.getElementById("bulk-pass-input").value;
+  if (entered !== BULK_REMIND_PASSWORD) {
+    document.getElementById("bulk-pass-error").textContent = "Incorrect password. Admin has been notified.";
+    document.getElementById("bulk-pass-input").value = "";
+    document.getElementById("bulk-pass-input").focus();
+    const cb = "passf_" + Date.now();
+    window[cb] = function() { delete window[cb]; };
+    const who = sessionStorage.getItem("mw_name") || sessionStorage.getItem("mw_tok") || "Unknown";
+    const s = document.createElement("script");
+    s.src = SCRIPT_URL + "?action=security_alert&event=bulk_remind_wrong_password&who=" + encodeURIComponent(who) + "&time=" + encodeURIComponent(new Date().toLocaleString()) + "&callback=" + cb;
+    document.body.appendChild(s);
+    setTimeout(() => { try{document.body.removeChild(s);}catch(e){} }, 8000);
+    return;
+  }
+  document.getElementById("bulk-pass-modal").classList.remove("open");
+  if (window._pendingRemindType === "individual") {
+    window._pendingRemindType = null;
+    _openRemindModal();
+  } else {
+    const targets = window._bulkTargets || [];
+    document.getElementById("bulk-modal-info").innerHTML =
+      `<strong>${targets.length} member${targets.length !== 1 ? "s" : ""}</strong> will receive a reminder email.<br>
+       Unpaid: <strong style="color:#ff8a88">${targets.filter(m=>m.regStatus==="UNPAID").length}</strong> &nbsp;·&nbsp;
+       Partial: <strong style="color:#f0c050">${targets.filter(m=>m.regStatus==="PARTIAL").length}</strong><br><br>
+       <small style="color:var(--text2)">Emails send one at a time to avoid spam filters. This may take a minute.</small>`;
+    document.getElementById("bulk-modal").classList.add("open");
+  }
+}
+// ── BULK REMINDER ──────────────────────────────────
+function openBulkRemind() { openBulkRemindWithPassword(); }
+function closeBulkModal() { document.getElementById("bulk-modal").classList.remove("open"); window._bulkTargets = []; }
+async function sendBulkReminders() {
+  const targets = window._bulkTargets || [];
+  if (!targets.length) return;
+  const sendBtn = document.getElementById("bulk-send-btn"), bulkBtn = document.getElementById("bulk-remind-btn"), progress = document.getElementById("bulk-progress");
+  sendBtn.disabled = true; sendBtn.textContent = "Sending…";
+  closeBulkModal();
+  bulkBtn.className = "bulk-remind-btn running"; bulkBtn.textContent = "Sending…";
+  let sent = 0, failed = 0;
+  for (let i = 0; i < targets.length; i++) {
+    const m = targets[i];
+    progress.textContent = `${i+1}/${targets.length}`; bulkBtn.textContent = `Sending ${i+1}/${targets.length}…`;
+    await new Promise(resolve => {
+      const cb = "bulk_" + Date.now() + "_" + i;
+      let done = false;
+      window[cb] = function(resp) { done=true; if(resp&&resp.status==="ok")sent++;else failed++; delete window[cb]; resolve(); };
+      setTimeout(() => { if(!done){failed++;delete window[cb];resolve();} }, 12000);
+      const s = document.createElement("script");
+      s.src = SCRIPT_URL + "?action=remind&memberId=" + encodeURIComponent(m.id) + "&callback=" + cb;
+      document.body.appendChild(s);
+      setTimeout(() => { try{document.body.removeChild(s);}catch(e){} }, 15000);
+    });
+    const btn = document.getElementById("rb-" + m.id);
+    if (btn) { btn.textContent = "✓ Sent"; btn.className = "remind-btn sent"; }
+    await new Promise(r => setTimeout(r, 800));
+  }
+  bulkBtn.className = "bulk-remind-btn done"; bulkBtn.textContent = `✓ ${sent} sent`;
+  progress.textContent = failed > 0 ? `${failed} failed` : "";
+  sendBtn.disabled = false; sendBtn.textContent = "Send All Reminders →";
+}
+function showToast(msg, duration) { const t=document.getElementById("toast"); if(!t)return; t.textContent=msg;t.classList.add("show");clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.classList.remove("show"),duration||3000); }
+function eligClick(filter) {
+  const card = document.querySelector(".card");
+  if (card) card.scrollIntoView({behavior:"smooth",block:"start"});
+  setTimeout(() => {
+    const btns = document.querySelectorAll(".filter-btn");
+    if(filter==="PAID")    filterMembers("PAID",btns[1]);
+    if(filter==="PARTIAL") filterMembers("PARTIAL",btns[2]);
+    if(filter==="UNPAID")  filterMembers("UNPAID",btns[3]);
+  }, 350);
+}
+function statCardClick(filter) {
+  const table = document.querySelector(".card");
+  if (table) table.scrollIntoView({behavior:"smooth",block:"start"});
+  setTimeout(() => {
+    if(filter==="all")         filterMembers("all",document.querySelector(".filter-btn"));
+    else if(filter==="PAID")   { const btn=document.querySelectorAll(".filter-btn")[1]; if(btn)filterMembers("PAID",btn); }
+    else if(filter==="OUTSTANDING") { const btn=document.querySelectorAll(".filter-btn")[3]; if(btn)filterMembers("UNPAID",btn); }
+  }, 400);
+}
+function loadScannerHealth() {
+  const cb = "sh_" + Date.now();
+  window[cb] = function(data) {
+    delete window[cb];
+    const badge=document.getElementById("scanner-status-badge"), body=document.getElementById("scanner-health-body");
+    if(!badge||!body)return;
+    if(!data||data.status!=="ok"){body.textContent="Could not load scanner status.";return;}
+    const s=data.scannerStatus;
+    const colors={ok:"rgba(33,123,49,0.3)",warning:"rgba(214,139,12,0.3)",critical:"rgba(213,35,33,0.3)",never_run:"rgba(255,255,255,0.1)"};
+    const labels={ok:"OK",warning:"Warning",critical:"CRITICAL",never_run:"Never Run"};
+    const textColors={ok:"var(--gmid)",warning:"#f0c050",critical:"#ff8a88",never_run:"var(--text2)"};
+    badge.textContent=labels[s]||s; badge.style.background=colors[s]||colors.never_run; badge.style.color=textColors[s]||"var(--text2)";
+    body.innerHTML=s==="never_run"?`<div style="color:var(--text3)">Scanner has not run yet. Check your Apps Script triggers.</div>`
+      :`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text2);font-size:12px;">Last scan</span><span style="font-size:12px;">${data.lastRun}</span></div>
+       <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text2);font-size:12px;">Hours ago</span><span style="font-size:12px;color:${s==="ok"?"var(--gmid)":s==="warning"?"#f0c050":"#ff8a88"};">${data.hoursAgo}h</span></div>
+       <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:var(--text2);font-size:12px;">Emails processed</span><span style="font-size:12px;">${data.lastCount}</span></div>
+       ${s==="critical"?`<div style="margin-top:8px;padding:8px;background:rgba(213,35,33,0.1);border-radius:6px;font-size:12px;color:#ff8a88;">Scanner has not run in over 24 hours. Payments may be missed. Check Apps Script triggers immediately.</div>`:""}
+       ${data.lastError?`<div style="margin-top:6px;font-size:11px;color:#ff8a88;opacity:0.7;">Last error: ${data.lastError}</div>`:""}`;
+  };
+  const s=document.createElement("script");
+  s.src=SCRIPT_URL+"?action=scanner_health&callback="+cb;
+  document.body.appendChild(s);
+  setTimeout(()=>{try{document.body.removeChild(s);}catch(e){}},10000);
+}
+function loadPendingUpdates() {
+  const cb = "pu_" + Date.now();
+  window[cb] = function(data) {
+    delete window[cb];
+    if(!data||data.status!=="ok"||data.count===0)return;
+    const card=document.getElementById("pending-updates-card"), badge=document.getElementById("pending-count-badge"), body=document.getElementById("pending-updates-body");
+    if(!card)return;
+    card.style.display="block"; badge.textContent=data.count;
+    body.innerHTML=data.requests.map(req=>`
+      <div style="padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><span style="font-family:monospace;font-size:13px;color:var(--gmid);">${req.memberId}</span>
+          <span style="font-size:12px;color:var(--text2);margin-left:8px;">wants to change <strong style="color:var(--text);">${req.field}</strong></span></div>
+          <button onclick="approveUpdate('${req.key}')" style="background:rgba(33,123,49,0.2);border:1px solid rgba(33,123,49,0.4);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--gmid);cursor:pointer;">Approve</button>
+        </div>
+        <div style="font-size:13px;color:var(--text);margin-top:4px;">New value: <strong>${req.value}</strong></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">${new Date(req.requestedAt).toLocaleString()}</div>
+      </div>`).join("");
+  };
+  const s=document.createElement("script");
+  s.src=SCRIPT_URL+"?action=pending_updates&callback="+cb;
+  document.body.appendChild(s);
+  setTimeout(()=>{try{document.body.removeChild(s);}catch(e){}},10000);
+}
+function approveUpdate(reqKey) {
+  const cb="au_"+Date.now();
+  window[cb]=function(data){delete window[cb];if(data&&data.status==="ok"){showToast("Update approved: "+data.message);loadPendingUpdates();}else{showToast("Error: "+(data&&data.message||"Unknown error"));}};
+  const s=document.createElement("script");
+  s.src=SCRIPT_URL+"?action=approve_update&reqKey="+encodeURIComponent(reqKey)+"&callback="+cb;
+  document.body.appendChild(s);
+}
+var _waMsgText="";
+function generateWaMessage() {
+  const fund=document.getElementById("wa-fund").value.trim(), deceased=document.getElementById("wa-deceased").value.trim();
+  const relation=document.getElementById("wa-relation").value.trim(), bereaved=document.getElementById("wa-bereaved").value.trim();
+  const amount=document.getElementById("wa-amount").value.trim()||"10", deadline=document.getElementById("wa-deadline").value.trim();
+  if(!fund||!deceased){showToast("Fund code and deceased name are required");return;}
+  const cb="wa_"+Date.now();
+  window[cb]=function(data){delete window[cb];if(data&&data.status==="ok"){_waMsgText=data.message;const preview=document.getElementById("wa-preview"),copyBtn=document.getElementById("wa-copy-btn");preview.textContent=data.message;preview.style.display="block";copyBtn.style.display="inline-block";}else{showToast("Error generating message");}};
+  const s=document.createElement("script");
+  s.src=SCRIPT_URL+"?action=whatsapp_message&fund="+encodeURIComponent(fund)+"&deceased="+encodeURIComponent(deceased)+"&relation="+encodeURIComponent(relation)+"&bereaved="+encodeURIComponent(bereaved)+"&amount="+encodeURIComponent(amount)+"&deadline="+encodeURIComponent(deadline)+"&callback="+cb;
+  document.body.appendChild(s);
+  setTimeout(()=>{try{document.body.removeChild(s);}catch(e){}},10000);
+}
+function copyWaMessage() {
+  if(!_waMsgText)return;
+  navigator.clipboard.writeText(_waMsgText).then(()=>{const btn=document.getElementById("wa-copy-btn");btn.textContent="✓ Copied!";setTimeout(()=>{btn.textContent="Copy to Clipboard ✓";},2000);showToast("Message copied — paste into WhatsApp group");});
+}
+function closeWaModal() { document.getElementById("wa-modal").classList.remove("open");document.getElementById("wa-preview").style.display="none";document.getElementById("wa-copy-btn").style.display="none";_waMsgText=""; }
+function closeManualPayModal() { document.getElementById("manual-pay-modal").classList.remove("open");document.getElementById("mp-result").textContent=""; }
+
+function openManualPayModal() {
+  populateFundDropdown((dashData && dashData.activeFunds) || []);
+  toggleFundSelector();
+  document.getElementById("manual-pay-modal").classList.add("open");
+}
+
+function toggleFundSelector() {
+  const type = document.getElementById('mp-type').value;
+  const fundRow = document.getElementById('mp-fund-row');
+  fundRow.style.display = type === 'Funeral Contribution' ? 'block' : 'none';
+  if (type !== 'Funeral Contribution') {
+    document.getElementById('mp-fund').value = '';
+    document.getElementById('mp-fund-manual').value = '';
+  }
+}
+
+function populateFundDropdown(activeFunds) {
+  const sel = document.getElementById('mp-fund');
+  sel.innerHTML = '<option value="">-- Select Fund --</option>';
+  if (!activeFunds || !activeFunds.length) return;
+  activeFunds.forEach(function(f) {
+    const opt = document.createElement('option');
+    opt.value = f.code;
+    opt.textContent = f.code + ' — ' + f.deceased + ' ($' + f.amount + '/member)';
+    sel.appendChild(opt);
+  });
+}
+
+function submitManualPayment() {
+  const memberId=document.getElementById("mp-id").value.trim().toUpperCase(), amount=document.getElementById("mp-amount").value.trim();
+  const payType=document.getElementById("mp-type").value, memo=document.getElementById("mp-memo").value.trim();
+  const resultEl=document.getElementById("mp-result"), btn=document.getElementById("mp-submit-btn");
+
+  const fundSel    = document.getElementById('mp-fund') ? document.getElementById('mp-fund').value.trim() : '';
+  const fundManual = document.getElementById('mp-fund-manual') ? document.getElementById('mp-fund-manual').value.trim().toUpperCase() : '';
+  const fundCode   = fundManual || fundSel;
+
+  if(!memberId||!amount){showToast("Member ID and amount required");return;}
+  if (payType === 'Funeral Contribution' && !fundCode) {
+    resultEl.innerHTML = '<div style="color:#ff8a88;">Please select or enter a Fund Code.</div>';
+    return;
+  }
+
+  btn.disabled=true;btn.textContent="Recording…";resultEl.textContent="";
+  const cb="mp_"+Date.now();
+  window[cb]=function(data){delete window[cb];btn.disabled=false;btn.textContent="Record Payment →";
+    if(data&&data.status==="ok"){resultEl.innerHTML=`<div style="color:var(--gmid);padding:10px;background:rgba(33,123,49,0.1);border-radius:8px;">✓ Recorded for <strong>${data.name}</strong> (${data.memberId})<br>Amount: $${data.amount} | New balance: $${data.newBalance}${data.excess>0?"<br>Excess $"+data.excess+" added as funeral credit":""}</div>`;setTimeout(()=>{closeManualPayModal();loadDashboard();},2000);}
+    else{resultEl.innerHTML=`<div style="color:#ff8a88;">${(data&&data.message)||"Error recording payment"}</div>`;}
+  };
+  const s=document.createElement("script");
+  s.src=SCRIPT_URL+"?action=manual_payment&memberId="+encodeURIComponent(memberId)+"&amount="+encodeURIComponent(amount)+"&payType="+encodeURIComponent(payType)+"&fundCode="+encodeURIComponent(fundCode||"REG")+"&memo="+encodeURIComponent(memo||"MANUAL ENTRY")+"&callback="+cb;
+  document.body.appendChild(s);
+  setTimeout(()=>{if(!window[cb])return;delete window[cb];btn.disabled=false;btn.textContent="Record Payment →";resultEl.innerHTML=`<div style="color:#ff8a88;">Request timed out. Check your connection.</div>`;},25000);
+}
+
+// ── REVERSE PAYMENT (from member drawer) ────────────────────
+function reverseFromDrawer(row, amount, type) {
+  if (!confirm(`Reverse this ${type} payment of $${amount} (row ${row})? This updates PAYMENTS, the FUND tab, and TRACK tab together. Cannot be undone from here.`)) return;
+  const cb = "rev_" + Date.now();
+  window[cb] = function(data) {
+    delete window[cb];
+    if (data && data.status === "ok") { showToast("✓ " + data.message); closeDrawer(); loadDashboard(); }
+    else { showToast("Error: " + (data && data.message || "unknown")); }
+  };
+  const s = document.createElement("script");
+  s.src = SCRIPT_URL + "?action=reverse_payment&row=" + encodeURIComponent(row) + "&callback=" + cb;
+  document.body.appendChild(s);
+  setTimeout(() => { try { document.body.removeChild(s); } catch(e){} }, 15000);
+}
+
+// ── WRONG MEMBER FIX ─────────────────────────────────────────
+function openWrongMemberModal() {
+  document.getElementById("wm-wrong-id").value = "";
+  document.getElementById("wm-correct-id").value = "";
+  document.getElementById("wm-amount").value = "";
+  document.getElementById("wm-date").valueAsDate = new Date();
+  document.getElementById("wm-result").textContent = "";
+  document.getElementById("wrong-member-modal").classList.add("open");
+}
+function closeWrongMemberModal() {
+  document.getElementById("wrong-member-modal").classList.remove("open");
+  document.getElementById("wm-result").textContent = "";
+}
+function submitWrongMemberFix() {
+  const wrongId   = document.getElementById("wm-wrong-id").value.trim().toUpperCase();
+  const correctId = document.getElementById("wm-correct-id").value.trim().toUpperCase();
+  const amount    = document.getElementById("wm-amount").value.trim();
+  const date      = document.getElementById("wm-date").value;
+  const resultEl  = document.getElementById("wm-result"), btn = document.getElementById("wm-submit-btn");
+  if (!wrongId || !correctId || !amount) { showToast("Wrong ID, correct ID, and amount are required"); return; }
+  if (!confirm(`Move $${amount} from ${wrongId} to ${correctId}? This updates PAYMENTS, the FUND tab, and TRACK tab together. Cannot be undone from here.`)) return;
+  btn.disabled = true; btn.textContent = "Moving…"; resultEl.textContent = "";
+  const cb = "wm_" + Date.now();
+  window[cb] = function(data) {
+    delete window[cb];
+    btn.disabled = false; btn.textContent = "Move Payment →";
+    if (data && data.status === "ok") {
+      resultEl.innerHTML = '<div style="color:var(--gmid);padding:10px;background:rgba(33,123,49,0.1);border-radius:8px;">✓ ' + data.message + '</div>';
+      setTimeout(() => { closeWrongMemberModal(); loadDashboard(); }, 2000);
+    } else {
+      resultEl.innerHTML = '<div style="color:#ff8a88;">' + ((data && data.message) || "Error moving payment") + '</div>';
+    }
+  };
+  const s = document.createElement("script");
+  s.src = SCRIPT_URL + "?action=wrong_member_fix" +
+    "&wrongId=" + encodeURIComponent(wrongId) +
+    "&correctId=" + encodeURIComponent(correctId) +
+    "&amount=" + encodeURIComponent(amount) +
+    "&date=" + encodeURIComponent(date) +
+    "&callback=" + cb;
+  document.body.appendChild(s);
+  setTimeout(() => {
+    if (!window[cb]) return;
+    delete window[cb];
+    btn.disabled = false; btn.textContent = "Move Payment →";
+    resultEl.innerHTML = '<div style="color:#ff8a88;">Request timed out. Check your connection.</div>';
+  }, 25000);
+}
+
+// ── SCROLL TO SECTION (used by the Fix Tool header button) ──
+function scrollToSection(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ── MAINTENANCE FIX TOOL (runFix bridge) ─────────────────────
+const FT_FIELDS = {
+  missing:      ['memberId','amount','senderName','date','fundCode'],
+  late:         ['memberId','amount','senderName','date','fundCode'],
+  fund:         ['memberId','amount','date','fundCode','row'],
+  wrong_member: ['wrongId','correctId','amount','date','fundCode'],
+  overpayment:  ['memberId','amount','date','applyToFund'],
+  credit:       ['memberId','amount','reason'],
+  reverse:      ['row','reason']
+};
+const FT_REQUIRED = {
+  missing:      ['memberId','amount','senderName','date','fundCode'],
+  late:         ['memberId','amount','senderName','date','fundCode'],
+  fund:         ['memberId','amount','date','fundCode'],
+  wrong_member: ['wrongId','correctId','amount','date','fundCode'],
+  overpayment:  ['memberId','amount'],
+  credit:       ['memberId','amount','reason'],
+  reverse:      ['row','reason']
+};
+
+function updateFixToolFields() {
+  const type = document.getElementById('ft-type').value;
+  const all = ['memberId','wrongId','correctId','amount','fundCode','date','senderName','row','reason','applyToFund'];
+  const show = FT_FIELDS[type] || [];
+  all.forEach(f => {
+    const el = document.getElementById('ft-g-' + f);
+    if (el) el.style.display = show.indexOf(f) !== -1 ? '' : 'none';
+  });
+}
+
+function populateFixToolFunds(activeFunds) {
+  const sel = document.getElementById('ft-fundCode');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- Select Fund --</option>';
+  (activeFunds || []).forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.code;
+    opt.textContent = f.code + ' — ' + f.deceased + ' ($' + f.amount + '/member)';
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
+}
+
+function submitFixTool() {
+  const type = document.getElementById('ft-type').value;
+  const dryRun = document.getElementById('ft-dryrun').checked;
+  const resultEl = document.getElementById('ft-result'), btn = document.getElementById('ft-submit-btn');
+
+  const params = { type: type, dryRun: dryRun ? 'true' : 'false' };
+  (FT_FIELDS[type] || []).forEach(f => {
+    if (f === 'applyToFund') {
+      params.applyToFund = document.getElementById('ft-applyToFund').checked ? 'true' : 'false';
+      return;
+    }
+    const el = document.getElementById('ft-' + f);
+    if (el && el.value) params[f] = el.value.trim();
+  });
+
+  const missing = (FT_REQUIRED[type] || []).filter(f => !params[f]);
+  if (missing.length) {
+    resultEl.innerHTML = '<div style="color:#ff8a88;">Missing required field(s): ' + missing.join(', ') + '</div>';
+    return;
+  }
+
+  if (!dryRun && !confirm('Apply this ' + type.replace('_',' ') + ' fix for real? This writes to PAYMENTS, TRACK, and FUND sheets together. Cannot be undone from here.')) return;
+
+  btn.disabled = true; btn.textContent = dryRun ? 'Previewing…' : 'Applying…'; resultEl.textContent = '';
+  ftBusy = true;
+  const cb = 'ft_' + Date.now();
+  window[cb] = function(data) {
+    delete window[cb];
+    ftBusy = false;
+    btn.disabled = false; btn.textContent = 'Run Fix →';
+    if (!data) { resultEl.innerHTML = '<div style="color:#ff8a88;">No response</div>'; return; }
+    const lines = (data.logs || []).join('\n').replace(/</g,'&lt;');
+    const color = data.status === 'ok' ? 'var(--gmid)' : '#ff8a88';
+    resultEl.innerHTML = '<div style="color:' + color + ';padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;white-space:pre-wrap;font-family:monospace;font-size:11px;max-height:260px;overflow-y:auto;">' + (lines || (data.message||'Done')) + '</div>';
+    // No auto-refresh here on purpose: this panel lives inside the
+    // part of the page that gets rebuilt on every refresh, so an
+    // automatic reload would wipe this result out right when you
+    // need to read it. The toast is a floating confirmation that
+    // survives regardless — refresh manually whenever you're ready.
+    if (data.status === 'ok' && !dryRun) {
+      showToast('✓ Fix applied — ' + (data.message || 'done') + '. Click Refresh when ready to see updated totals.', 7000);
+    }
+  };
+  const qs = Object.keys(params).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
+  const s = document.createElement('script');
+  s.src = SCRIPT_URL + '?action=run_fix&' + qs + '&callback=' + cb;
+  document.body.appendChild(s);
+  setTimeout(() => {
+    if (!window[cb]) return;
+    delete window[cb];
+    ftBusy = false;
+    btn.disabled = false; btn.textContent = 'Run Fix →';
+    resultEl.innerHTML = '<div style="color:#ff8a88;">Request timed out. Check your connection.</div>';
+  }, 25000);
+}
+
+// ── FUND STATUS REPORT (generateFundReport bridge) ───────────
+function populateFundReportDropdown(activeFunds) {
+  const sel = document.getElementById('fr-fundCode');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- Select Fund --</option>';
+  (activeFunds || []).forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.code;
+    opt.textContent = f.code + ' — ' + f.deceased;
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
+}
+
+function submitFundReport() {
+  const fundCode = document.getElementById('fr-fundCode').value;
+  const resultEl = document.getElementById('fr-result'), btn = document.getElementById('fr-submit-btn');
+  if (!fundCode) { resultEl.innerHTML = '<div style="color:#ff8a88;">Select a fund first</div>'; return; }
+  if (!confirm('Generate and email the ' + fundCode + ' full status report now?')) return;
+
+  btn.disabled = true; btn.textContent = 'Generating…'; resultEl.textContent = '';
+  ftBusy = true;
+  const cb = 'fr_' + Date.now();
+  window[cb] = function(data) {
+    delete window[cb];
+    ftBusy = false;
+    btn.disabled = false; btn.textContent = '📧 Full Status Report (Paid + Pending)';
+    if (data && data.status === 'ok') {
+      resultEl.innerHTML = '<div style="color:var(--gmid);">✓ ' + data.message + '</div>';
+    } else {
+      resultEl.innerHTML = '<div style="color:#ff8a88;">' + ((data && data.message) || 'Error generating report') + '</div>';
+    }
+  };
+  const s = document.createElement('script');
+  s.src = SCRIPT_URL + '?action=fund_report&fundCode=' + encodeURIComponent(fundCode) + '&callback=' + cb;
+  document.body.appendChild(s);
+  setTimeout(() => {
+    if (!window[cb]) return;
+    delete window[cb];
+    ftBusy = false;
+    btn.disabled = false; btn.textContent = '📧 Full Status Report (Paid + Pending)';
+    resultEl.innerHTML = '<div style="color:#ff8a88;">Request timed out — the report may still be processing. Check the leadership inbox before retrying.</div>';
+  }, 45000);
+}
+
+// ── PENDING-ONLY REPORT ───────────────────────────────────────
+// Same fund dropdown, different backend action — lists only
+// members who still owe, instead of the full paid+pending report.
+function submitPendingReport() {
+  const fundCode = document.getElementById('fr-fundCode').value;
+  const resultEl = document.getElementById('fr-result'), btn = document.getElementById('pr-submit-btn');
+  if (!fundCode) { resultEl.innerHTML = '<div style="color:#ff8a88;">Select a fund first</div>'; return; }
+  if (!confirm('Generate and email the ' + fundCode + ' pending-only report now?')) return;
+
+  btn.disabled = true; btn.textContent = 'Generating…'; resultEl.textContent = '';
+  ftBusy = true;
+  const cb = 'pr_' + Date.now();
+  window[cb] = function(data) {
+    delete window[cb];
+    ftBusy = false;
+    btn.disabled = false; btn.textContent = '📋 Pending-Only Report';
+    if (data && data.status === 'ok') {
+      resultEl.innerHTML = '<div style="color:var(--gmid);">✓ ' + data.message + '</div>';
+    } else {
+      resultEl.innerHTML = '<div style="color:#ff8a88;">' + ((data && data.message) || 'Error generating report') + '</div>';
+    }
+  };
+  const s = document.createElement('script');
+  s.src = SCRIPT_URL + '?action=pending_report&fundCode=' + encodeURIComponent(fundCode) + '&callback=' + cb;
+  document.body.appendChild(s);
+  setTimeout(() => {
+    if (!window[cb]) return;
+    delete window[cb];
+    ftBusy = false;
+    btn.disabled = false; btn.textContent = '📋 Pending-Only Report';
+    resultEl.innerHTML = '<div style="color:#ff8a88;">Request timed out — the report may still be processing. Check the leadership inbox before retrying.</div>';
+  }, 45000);
+}
+
+// ── FUND CLOSE ─────────────────────────────────────────────────
+function populateFundCloseDropdown(activeFunds) {
+  const sel = document.getElementById('fc-fundCode');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- Select Fund --</option>';
+  (activeFunds || []).forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.code;
+    opt.textContent = f.code + ' — ' + f.deceased;
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
+}
+
+function submitCloseFund() {
+  const fundCode = document.getElementById('fc-fundCode').value;
+  const resultEl = document.getElementById('fc-result'), btn = document.getElementById('fc-submit-btn');
+  if (!fundCode) { resultEl.innerHTML = '<div style="color:#ff8a88;">Select a fund first</div>'; return; }
+  if (!confirm('Close ' + fundCode + '? This stops it from accepting new contributions. Existing payments are not affected or reversed. This cannot be undone from here.')) return;
+
+  btn.disabled = true; btn.textContent = 'Closing…'; resultEl.textContent = '';
+  ftBusy = true;
+  const cb = 'fc_' + Date.now();
+  window[cb] = function(data) {
+    delete window[cb];
+    ftBusy = false;
+    btn.disabled = false; btn.textContent = '🔒 Close Fund';
+    if (data && data.status === 'ok') {
+      resultEl.innerHTML = '<div style="color:var(--gmid);">✓ ' + data.message + '</div>';
+      showToast('✓ ' + fundCode + ' closed. Click Refresh when ready.', 6000);
+    } else {
+      resultEl.innerHTML = '<div style="color:#ff8a88;">' + ((data && data.message) || 'Error closing fund') + '</div>';
+    }
+  };
+  const s = document.createElement('script');
+  s.src = SCRIPT_URL + '?action=close_fund&fundCode=' + encodeURIComponent(fundCode) + '&callback=' + cb;
+  document.body.appendChild(s);
+  setTimeout(() => {
+    if (!window[cb]) return;
+    delete window[cb];
+    ftBusy = false;
+    btn.disabled = false; btn.textContent = '🔒 Close Fund';
+    resultEl.innerHTML = '<div style="color:#ff8a88;">Request timed out. Check your connection.</div>';
+  }, 20000);
+}
+
+// ── SPLIT PAYMENT — one Zelle transfer, applied to several ───
+// members. Loops real manual_payment calls, one per entry, using
+// the same backend action Manual Pay already uses (no new backend
+// route needed). Note: like Manual Pay, each entry records with
+// today's date, not the original payment date - the date you enter
+// here gets folded into the memo text for the record instead.
+let splitEntryCount = 0;
+
+function populateSplitEntryFunds(sel) {
+  const funds = (dashData && dashData.activeFunds) || [];
+  sel.innerHTML = funds.map(f => `<option value="${f.code}">${f.code} — ${f.deceased}</option>`).join('') + '<option value="REG">Registration</option>';
+}
+
+function addSplitEntry() {
+  const idx = splitEntryCount++;
+  const div = document.createElement('div');
+  div.className = 'split-entry-row';
+  div.dataset.idx = idx;
+  div.style.cssText = 'background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;position:relative';
+  div.innerHTML =
+    '<button onclick="removeSplitEntry(this)" style="position:absolute;top:6px;right:6px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">×</button>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">' +
+      '<div><label style="font-size:10px;color:var(--text2);text-transform:uppercase;display:block;margin-bottom:3px">Member ID</label>' +
+        '<input class="sp-mid" placeholder="MW0317" oninput="calcSplitBalance()" style="width:100%;padding:7px 9px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;text-transform:uppercase"></div>' +
+      '<div><label style="font-size:10px;color:var(--text2);text-transform:uppercase;display:block;margin-bottom:3px">Amount ($)</label>' +
+        '<input class="sp-amt" type="number" placeholder="10" oninput="calcSplitBalance()" style="width:100%;padding:7px 9px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;"></div>' +
+      '<div><label style="font-size:10px;color:var(--text2);text-transform:uppercase;display:block;margin-bottom:3px">Fund</label>' +
+        '<select class="sp-fund" style="width:100%;padding:7px 9px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;"><option value="REG">Registration</option></select></div>' +
+    '</div>';
+  document.getElementById('split-entries').appendChild(div);
+  populateSplitEntryFunds(div.querySelector('.sp-fund'));
+  calcSplitBalance();
+}
+
+function removeSplitEntry(btn) {
+  btn.closest('.split-entry-row').remove();
+  calcSplitBalance();
+}
+
+function calcSplitBalance() {
+  const total = parseFloat(document.getElementById('sp-total').value) || 0;
+  let allocated = 0;
+  document.querySelectorAll('#split-entries .sp-amt').forEach(inp => { allocated += parseFloat(inp.value) || 0; });
+  const balEl = document.getElementById('split-balance');
+  if (total > 0) {
+    balEl.style.display = '';
+    const remaining = Math.round((total - allocated) * 100) / 100;
+    if (Math.abs(remaining) < 0.01) {
+      balEl.style.background = 'rgba(33,123,49,0.15)'; balEl.style.color = 'var(--gmid)';
+      balEl.textContent = '✓ Fully allocated - $' + allocated.toFixed(2) + ' of $' + total.toFixed(2);
+    } else {
+      balEl.style.background = 'rgba(214,139,12,0.15)'; balEl.style.color = '#f0c050';
+      balEl.textContent = remaining > 0 ? '⚠ $' + remaining.toFixed(2) + ' still unallocated' : '⚠ Over by $' + Math.abs(remaining).toFixed(2);
+    }
+  } else {
+    balEl.style.display = 'none';
+  }
+}
+
+function openSplitModal() {
+  document.getElementById('sp-sender').value = '';
+  document.getElementById('sp-total').value = '';
+  document.getElementById('sp-memo').value = '';
+  document.getElementById('sp-date').valueAsDate = new Date();
+  document.getElementById('split-entries').innerHTML = '';
+  document.getElementById('split-balance').style.display = 'none';
+  document.getElementById('sp-result').textContent = '';
+  splitEntryCount = 0;
+  addSplitEntry(); addSplitEntry();
+  document.getElementById('split-modal').classList.add('open');
+}
+
+function closeSplitModal() {
+  document.getElementById('split-modal').classList.remove('open');
+}
+
+function submitSplitPayment() {
+  const sender = document.getElementById('sp-sender').value.trim();
+  const memo = document.getElementById('sp-memo').value.trim();
+  const date = document.getElementById('sp-date').value;
+  const resultEl = document.getElementById('sp-result'), btn = document.getElementById('sp-submit-btn');
+
+  const rows = Array.from(document.querySelectorAll('#split-entries .split-entry-row'));
+  const entries = rows.map(r => ({
+    memberId: r.querySelector('.sp-mid').value.trim().toUpperCase(),
+    amount: parseFloat(r.querySelector('.sp-amt').value) || 0,
+    fundCode: r.querySelector('.sp-fund').value
+  }));
+
+  if (!entries.length || entries.some(e => !/^MW\d{4}$/.test(e.memberId) || !e.amount)) {
+    resultEl.innerHTML = '<div style="color:#ff8a88">Every row needs a valid Member ID (MW####) and amount</div>';
+    return;
+  }
+  if (!confirm('Apply ' + entries.length + ' separate payments now? This writes to PAYMENTS, TRACK, and FUND sheets for each one. Cannot be undone from here.')) return;
+
+  btn.disabled = true; btn.textContent = 'Applying…'; resultEl.textContent = '';
+  ftBusy = true;
+  applySplitSequential(entries, 0, sender, memo, date, resultEl, btn);
+}
+
+function applySplitSequential(entries, i, sender, memo, date, resultEl, btn) {
+  if (i >= entries.length) {
+    ftBusy = false;
+    btn.disabled = false; btn.textContent = 'Apply All →';
+    resultEl.innerHTML = '<div style="color:var(--gmid)">✓ All ' + entries.length + ' payments applied</div>';
+    showToast('✓ Split payment complete — ' + entries.length + ' members credited. Refresh when ready.', 7000);
+    return;
+  }
+  const e = entries[i];
+  const payType = e.fundCode === 'REG' ? 'Registration Fee' : 'Funeral Contribution';
+  const legMemo = (memo || '') + (date ? ' (received ' + date + ')' : '') + ' (split ' + (i+1) + '/' + entries.length + (sender ? ' from ' + sender : '') + ')';
+  resultEl.innerHTML = '<div style="color:var(--text2)">Applying ' + (i+1) + ' of ' + entries.length + ': ' + e.memberId + '…</div>';
+  const cb = 'sp_' + Date.now() + '_' + i;
+  window[cb] = function(data) {
+    delete window[cb];
+    if (!data || data.status !== 'ok') {
+      resultEl.innerHTML += '<div style="color:#ff8a88">✗ ' + e.memberId + ': ' + ((data && data.message) || 'failed') + '</div>';
+    }
+    setTimeout(() => applySplitSequential(entries, i + 1, sender, memo, date, resultEl, btn), 400);
+  };
+  const s = document.createElement('script');
+  s.src = SCRIPT_URL + '?action=manual_payment&memberId=' + encodeURIComponent(e.memberId) +
+    '&amount=' + encodeURIComponent(e.amount) + '&payType=' + encodeURIComponent(payType) +
+    '&fundCode=' + encodeURIComponent(e.fundCode) + '&memo=' + encodeURIComponent(legMemo) + '&callback=' + cb;
+  document.body.appendChild(s);
+  setTimeout(() => {
+    if (!window[cb]) return;
+    delete window[cb];
+    resultEl.innerHTML += '<div style="color:#ff8a88">✗ ' + e.memberId + ': timed out</div>';
+    setTimeout(() => applySplitSequential(entries, i + 1, sender, memo, date, resultEl, btn), 400);
+  }, 20000);
+}
+
+// ── FULL PAYMENTS SHEET — sortable, paginated, newest first ──
+let paymentsSheetRows = [];
+let paymentsSheetLoaded = false;
+let paymentsSheetPage = 0;
+const PAYMENTS_SHEET_PER_PAGE = 50;
+let paymentsSheetSort = { col: 'date', dir: 'desc' };
+
+function openPaymentsSheet() {
+  scrollToSection('sec-payments-sheet');
+  if (!paymentsSheetLoaded) loadPaymentsSheet(false);
+}
+
+function loadPaymentsSheet(forceReload) {
+  const bodyEl = document.getElementById('payments-sheet-body');
+  bodyEl.innerHTML = '<div class="loading"><div class="spinner"></div>Loading payments sheet…</div>';
+  const cb = 'gps_' + Date.now();
+  window[cb] = function(data) {
+    delete window[cb];
+    if (!data || data.status !== 'ok') {
+      bodyEl.innerHTML = '<div style="color:#ff8a88;padding:10px;">' + ((data && data.message) || 'Error loading payments') + '</div>';
+      return;
+    }
+    paymentsSheetRows = data.rows || [];
+    paymentsSheetLoaded = true;
+    paymentsSheetPage = 0;
+    paymentsSheetSort = { col: 'date', dir: 'desc' };
+    renderPaymentsSheetTable();
+  };
+  const s = document.createElement('script');
+  s.src = SCRIPT_URL + '?action=get_payments&callback=' + cb;
+  document.body.appendChild(s);
+  setTimeout(() => {
+    if (!window[cb]) return;
+    delete window[cb];
+    bodyEl.innerHTML = '<div style="color:#ff8a88;padding:10px;">Request timed out. Try Refresh.</div>';
+  }, 30000);
+}
+
+function sortPaymentsSheet(col) {
+  if (paymentsSheetSort.col === col) {
+    paymentsSheetSort.dir = paymentsSheetSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    paymentsSheetSort = { col: col, dir: col === 'date' ? 'desc' : 'asc' };
+  }
+  paymentsSheetPage = 0;
+  renderPaymentsSheetTable();
+}
+
+function changePaymentsSheetPage(dir) {
+  const totalPages = Math.max(1, Math.ceil(paymentsSheetRows.length / PAYMENTS_SHEET_PER_PAGE));
+  paymentsSheetPage = Math.min(totalPages - 1, Math.max(0, paymentsSheetPage + dir));
+  renderPaymentsSheetTable();
+}
+
+function renderPaymentsSheetTable() {
+  const bodyEl = document.getElementById('payments-sheet-body');
+  document.getElementById('payments-sheet-count').textContent = paymentsSheetRows.length;
+
+  const sorted = paymentsSheetRows.slice().sort((a, b) => {
+    let av = a[paymentsSheetSort.col], bv = b[paymentsSheetSort.col];
+    if (paymentsSheetSort.col === 'amount') { av = av || 0; bv = bv || 0; }
+    else { av = (av || '').toString().toLowerCase(); bv = (bv || '').toString().toLowerCase(); }
+    if (av < bv) return paymentsSheetSort.dir === 'asc' ? -1 : 1;
+    if (av > bv) return paymentsSheetSort.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const start = paymentsSheetPage * PAYMENTS_SHEET_PER_PAGE;
+  const pageItems = sorted.slice(start, start + PAYMENTS_SHEET_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAYMENTS_SHEET_PER_PAGE));
+
+  const arrow = (col) => paymentsSheetSort.col === col ? (paymentsSheetSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+  const th = (col, label) => `<th style="cursor:pointer;user-select:none" onclick="sortPaymentsSheet('${col}')">${label}${arrow(col)}</th>`;
+
+  if (!sorted.length) {
+    bodyEl.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:20px 0;">No payments found.</div>';
+    return;
+  }
+
+  bodyEl.innerHTML = `
+    <div class="member-table-wrap">
+      <table class="member-table">
+        <thead><tr>
+          ${th('dateDisplay','Date')}${th('memberId','Member ID')}${th('memberName','Name')}
+          ${th('amount','Amount')}${th('type','Type')}${th('fund','Fund')}${th('sender','Sender')}${th('status','Status')}
+        </tr></thead>
+        <tbody>
+          ${pageItems.map(p => `<tr style="${p.status==='REVERSED'?'opacity:0.4':''}">
+            <td style="white-space:nowrap;font-size:11px">${p.dateDisplay}</td>
+            <td class="id-cell">${p.memberId}</td>
+            <td>${p.memberName}</td>
+            <td style="color:#4ade80;font-weight:600">${fmtAmt(p.amount)}</td>
+            <td style="font-size:11px">${(p.type||'').replace('Funeral Contribution','Fund').replace('Registration Fee','Reg')}</td>
+            <td style="font-size:11px">${p.fund||'—'}</td>
+            <td style="font-size:11px;color:var(--text2)">${p.sender||''}</td>
+            <td><span class="tag ${p.status==='REVERSED'?'reversed':p.status==='CONFIRMED'?'confirmed':'pending'}">${p.status}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="pager">
+      <button class="pager-btn" onclick="changePaymentsSheetPage(-1)" ${paymentsSheetPage===0?'disabled':''}>← Prev</button>
+      <span>Page ${paymentsSheetPage+1} of ${totalPages} (${sorted.length} rows)</span>
+      <button class="pager-btn" onclick="changePaymentsSheetPage(1)" ${paymentsSheetPage>=totalPages-1?'disabled':''}>Next →</button>
+    </div>`;
+}
+
+// ── FUND PAYOUTS — list + add new entry ───────────────────────
+let payoutsRows = [];
+
+function loadPayouts() {
+  const bodyEl = document.getElementById('payouts-body');
+  const cb = 'gpo_' + Date.now();
+  window[cb] = function(data) {
+    delete window[cb];
+    if (!data || data.status !== 'ok') {
+      bodyEl.innerHTML = '<div style="color:#ff8a88;padding:10px;">' + ((data && data.message) || 'Error loading payouts') + '</div>';
+      return;
+    }
+    payoutsRows = (data.rows || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    document.getElementById('payouts-count').textContent = payoutsRows.length;
+    if (!payoutsRows.length) {
+      bodyEl.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:20px 0;">No payouts recorded yet.</div>';
+      return;
+    }
+    bodyEl.innerHTML = payoutsRows.map(p => `
+      <div class="payment-row" style="padding:10px 0">
+        <div class="payment-avatar">${(p.fundCode||'??').slice(-2)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="payment-name">${p.fundCode} — ${p.description}</div>
+          <div class="payment-meta">${p.sentBy} · ${p.platform}${p.receiver?' · to '+p.receiver:''}</div>
+        </div>
+        <div class="payment-amount">${fmtAmt(p.amount)}</div>
+        <div class="payment-date">${p.dateDisplay}</div>
+      </div>`).join('');
+  };
+  const s = document.createElement('script');
+  s.src = SCRIPT_URL + '?action=get_payouts&callback=' + cb;
+  document.body.appendChild(s);
+  setTimeout(() => {
+    if (!window[cb]) return;
+    delete window[cb];
+    bodyEl.innerHTML = '<div style="color:#ff8a88;padding:10px;">Request timed out.</div>';
+  }, 20000);
+}
+
+function populatePayoutFundDropdown() {
+  const sel = document.getElementById('po-fundCode');
+  if (!sel) return;
+  const funds = (dashData && dashData.activeFunds) || [];
+  sel.innerHTML = '<option value="">-- Select Fund --</option>' +
+    funds.map(f => `<option value="${f.code}">${f.code} — ${f.deceased}</option>`).join('');
+}
+
+function openAddPayoutModal() {
+  populatePayoutFundDropdown();
+  document.getElementById('po-fundCode-manual').value = '';
+  document.getElementById('po-amount').value = '';
+  document.getElementById('po-description').value = '';
+  document.getElementById('po-date').valueAsDate = new Date();
+  document.getElementById('po-sentBy').value = 'Treasurer';
+  document.getElementById('po-platform').value = 'Zelle from Chase';
+  document.getElementById('po-receiver').value = '';
+  document.getElementById('po-result').textContent = '';
+  document.getElementById('payout-modal').classList.add('open');
+}
+
+function closeAddPayoutModal() {
+  document.getElementById('payout-modal').classList.remove('open');
+}
+
+function submitAddPayout() {
+  const fundSel    = document.getElementById('po-fundCode').value.trim();
+  const fundManual = document.getElementById('po-fundCode-manual').value.trim().toUpperCase();
+  const fundCode   = fundManual || fundSel;
+  const amount     = document.getElementById('po-amount').value.trim();
+  const description= document.getElementById('po-description').value.trim();
+  const date       = document.getElementById('po-date').value;
+  const sentBy     = document.getElementById('po-sentBy').value.trim();
+  const platform   = document.getElementById('po-platform').value.trim();
+  const receiver   = document.getElementById('po-receiver').value.trim();
+  const resultEl   = document.getElementById('po-result'), btn = document.getElementById('po-submit-btn');
+
+  if (!fundCode)     { resultEl.innerHTML = '<div style="color:#ff8a88">Select or type a fund code</div>'; return; }
+  if (!amount || parseFloat(amount) <= 0) { resultEl.innerHTML = '<div style="color:#ff8a88">Enter a valid amount</div>'; return; }
+  if (!description)  { resultEl.innerHTML = '<div style="color:#ff8a88">Description is required</div>'; return; }
+  if (!confirm('Record a $' + amount + ' payout for ' + fundCode + '?')) return;
+
+  btn.disabled = true; btn.textContent = 'Recording…'; resultEl.textContent = '';
+  const cb = 'apo_' + Date.now();
+  window[cb] = function(data) {
+    delete window[cb];
+    btn.disabled = false; btn.textContent = 'Record Payout →';
+    if (data && data.status === 'ok') {
+      resultEl.innerHTML = '<div style="color:var(--gmid)">✓ ' + data.message + '</div>';
+      setTimeout(() => { closeAddPayoutModal(); loadPayouts(); }, 1500);
+    } else {
+      resultEl.innerHTML = '<div style="color:#ff8a88">' + ((data && data.message) || 'Error recording payout') + '</div>';
+    }
+  };
+  const s = document.createElement('script');
+  s.src = SCRIPT_URL + '?action=add_payout&fundCode=' + encodeURIComponent(fundCode) +
+    '&amount=' + encodeURIComponent(amount) + '&description=' + encodeURIComponent(description) +
+    '&date=' + encodeURIComponent(date) + '&sentBy=' + encodeURIComponent(sentBy) +
+    '&platform=' + encodeURIComponent(platform) + '&receiver=' + encodeURIComponent(receiver) + '&callback=' + cb;
+  document.body.appendChild(s);
+  setTimeout(() => {
+    if (!window[cb]) return;
+    delete window[cb];
+    btn.disabled = false; btn.textContent = 'Record Payout →';
+    resultEl.innerHTML = '<div style="color:#ff8a88">Request timed out. Check your connection.</div>';
+  }, 20000);
+}
+
+// ── BOOT ──────────────────────────────────
+checkSession();
+</script>
+<div id="toast"></div>
+</body>
+</html>
