@@ -1727,34 +1727,87 @@ function submitFundReport() {
 // Same fund dropdown, different backend action — lists only
 // members who still owe, instead of the full paid+pending report.
 function submitPendingReport() {
-  const fundCode = document.getElementById('fr-fundCode').value;
-  const resultEl = document.getElementById('fr-result'), btn = document.getElementById('pr-submit-btn');
-  if (!fundCode) { resultEl.innerHTML = '<div style="color:#ff8a88;">Select a fund first</div>'; return; }
-  if (!confirm('Generate and email the ' + fundCode + ' pending-only report now?')) return;
+  const resultEl =
+    document.getElementById("fr-result");
 
-  btn.disabled = true; btn.textContent = 'Generating…'; resultEl.textContent = '';
+  const btn =
+    document.getElementById("pr-submit-btn");
+
+  if (!confirm(
+    "Generate and email the pending-only report for ALL funds now?"
+  )) {
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Generating…";
+  resultEl.textContent = "";
   ftBusy = true;
-  const cb = 'pr_' + Date.now();
+
+  const cb = "pr_" + Date.now();
+
   window[cb] = function(data) {
+
     delete window[cb];
+
     ftBusy = false;
-    btn.disabled = false; btn.textContent = '📋 Pending-Only Report';
-    if (data && data.status === 'ok') {
-      resultEl.innerHTML = '<div style="color:var(--gmid);">✓ ' + data.message + '</div>';
+    btn.disabled = false;
+    btn.textContent =
+      "📋 Pending-Only Report";
+
+    if (
+      data &&
+      data.status === "ok"
+    ) {
+
+      resultEl.innerHTML =
+        '<div style="color:var(--gmid);">' +
+        "✓ " +
+        data.message +
+        "</div>";
+
     } else {
-      resultEl.innerHTML = '<div style="color:#ff8a88;">' + ((data && data.message) || 'Error generating report') + '</div>';
+
+      resultEl.innerHTML =
+        '<div style="color:#ff8a88;">' +
+        (
+          (data && data.message) ||
+          "Error generating report"
+        ) +
+        "</div>";
     }
   };
-  const s = document.createElement('script');
-  s.src = SCRIPT_URL + '?action=pending_report&fundCode=' + encodeURIComponent(fundCode) + '&callback=' + cb;
-  document.body.appendChild(s);
-  setTimeout(() => {
-    if (!window[cb]) return;
+
+  const script =
+    document.createElement("script");
+
+  script.src =
+    SCRIPT_URL +
+    "?action=pending_report&callback=" +
+    cb;
+
+  document.body.appendChild(script);
+
+  setTimeout(function() {
+
+    if (!window[cb]) {
+      return;
+    }
+
     delete window[cb];
+
     ftBusy = false;
-    btn.disabled = false; btn.textContent = '📋 Pending-Only Report';
-    resultEl.innerHTML = '<div style="color:#ff8a88;">Request timed out — the report may still be processing. Check the leadership inbox before retrying.</div>';
-  }, 45000);
+    btn.disabled = false;
+    btn.textContent =
+      "📋 Pending-Only Report";
+
+    resultEl.innerHTML =
+      '<div style="color:#ff8a88;">' +
+      "Request timed out — the report may still be processing. " +
+      "Check the leadership inbox before retrying." +
+      "</div>";
+
+  }, 60000);
 }
 
 // ── FUND CLOSE ─────────────────────────────────────────────────
