@@ -1723,90 +1723,88 @@ function submitFundReport() {
   }, 45000);
 }
 
-// ── PENDING-ONLY REPORT ───────────────────────────────────────
-// Same fund dropdown, different backend action — lists only
-// members who still owe, instead of the full paid+pending report.
 function submitPendingReport() {
-  const resultEl =
-    document.getElementById("fr-result");
+  const resultEl = document.getElementById("fr-result");
+  const btn = document.getElementById("pr-submit-btn");
 
-  const btn =
-    document.getElementById("pr-submit-btn");
-
-  if (!confirm(
-    "Generate and email the pending-only report for ALL funds now?"
-  )) {
+  if (ftBusy) {
+    showToast("Another request is already processing.");
     return;
   }
 
+  if (!confirm(
+    "Generate and email the pending-only report for ALL funds?"
+  )) return;
+
+  ftBusy = true;
   btn.disabled = true;
   btn.textContent = "Generating…";
-  resultEl.textContent = "";
-  ftBusy = true;
+  resultEl.innerHTML =
+    '<div style="color:var(--text2);">Building the all-funds pending report…</div>';
 
   const cb = "pr_" + Date.now();
+  let completed = false;
 
   window[cb] = function(data) {
-
+    completed = true;
     delete window[cb];
 
     ftBusy = false;
     btn.disabled = false;
-    btn.textContent =
-      "📋 Pending-Only Report";
+    btn.textContent = "📋 Pending-Only Report";
 
     if (
       data &&
-      data.status === "ok"
+      data.status === "ok" &&
+      data.report === "pending_all_funds"
     ) {
-
       resultEl.innerHTML =
-        '<div style="color:var(--gmid);">' +
-        "✓ " +
+        '<div style="color:var(--gmid);">✓ ' +
         data.message +
         "</div>";
-
+    } else if (
+      data &&
+      data.message &&
+      data.message.indexOf("API is running") !== -1
+    ) {
+      resultEl.innerHTML =
+        '<div style="color:#ff8a88;">The deployed web app does not contain the pending_report route. Redeploy the Apps Script web app.</div>';
     } else {
-
       resultEl.innerHTML =
         '<div style="color:#ff8a88;">' +
-        (
-          (data && data.message) ||
-          "Error generating report"
-        ) +
+        ((data && data.message) || "Report generation failed") +
         "</div>";
     }
   };
 
-  const script =
-    document.createElement("script");
+  const script = document.createElement("script");
 
   script.src =
     SCRIPT_URL +
-    "?action=pending_report&callback=" +
-    cb;
+    "?action=pending_report" +
+    "&callback=" + encodeURIComponent(cb) +
+    "&cacheBust=" + Date.now();
 
-  document.body.appendChild(script);
+  script.onerror = function() {
+    if (completed) return;
 
-  setTimeout(function() {
-
-    if (!window[cb]) {
-      return;
-    }
-
+    completed = true;
     delete window[cb];
 
     ftBusy = false;
     btn.disabled = false;
-    btn.textContent =
-      "📋 Pending-Only Report";
+    btn.textContent = "📋 Pending-Only Report";
 
     resultEl.innerHTML =
-      '<div style="color:#ff8a88;">' +
-      "Request timed out — the report may still be processing. " +
-      "Check the leadership inbox before retrying." +
-      "</div>";
+      '<div style="color:#ff8a88;">Could not reach the reporting service.</div>';
+  };
 
+  document.body.appendChild(script);
+
+  setTimeout(function() {
+    try {
+      document.body.removeChild(script);
+    } catch (e) {}
   }, 60000);
 }
 
