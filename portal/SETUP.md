@@ -10,7 +10,7 @@
 
 1. In your organization's Google account, create or select a Firebase project on **Spark**. Do not add billing or upgrade to Blaze.
 2. Register a web app and retain its Project ID and Web API Key. These web identifiers are configuration, not administrative secrets. Never share service-account private keys.
-3. Under Authentication → Sign-in method, enable Email/Password. Configure a password policy with at least 12 characters. Use the default Firebase email action handler initially.
+3. Under Authentication → Sign-in method, enable Email/Password. Configure a password policy with at least 8 characters. Use the default Firebase email action handler initially.
 4. Configure verification and password-reset email templates. Members create their own passwords. Administrators never know or retrieve them.
 5. No Firestore database, Firebase Storage, Cloud Functions or Firebase Hosting is needed for this first deployment. GitHub hosts your public site; Apps Script serves the authenticated portal.
 
