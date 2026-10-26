@@ -1,0 +1,20 @@
+// Optional: add to the EXISTING payment automation project only after cutover.
+// Call ONLY after a uniquely matched, confirmed new payment. Do not replay history.
+// Do not replace doGet, doPost, or the scanner with this helper.
+// Script Properties in existing project: MEMBER_PORTAL_URL, MEMBER_PORTAL_SECRET.
+function postMatchedPaymentToMemberPortal_(payment) {
+  var props=PropertiesService.getScriptProperties();
+  var url=props.getProperty('MEMBER_PORTAL_URL'),secret=props.getProperty('MEMBER_PORTAL_SECRET');
+  if(!url||!secret||secret.length<32)throw new Error('Member portal bridge is not configured.');
+  // reference must identify the BANK transaction, not a newly generated ID.
+  // A stable request ID makes scanner retries safe.
+  var payload=JSON.stringify({kind:'PAYMENT',memberId:payment.memberId,amount:String(payment.amount),
+    reference:payment.reference,scope:payment.scope||'advance',title:'Confirmed payment',
+    note:'Confirmed by payment matching automation',requestId:'bank_'+payment.reference});
+  var timestamp=Date.now();
+  var signature=Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(timestamp+'.'+payload,secret));
+  var response=UrlFetchApp.fetch(url,{method:'post',contentType:'application/json',payload:JSON.stringify({timestamp:timestamp,payload:payload,signature:signature}),muteHttpExceptions:true});
+  var result=JSON.parse(response.getContentText());
+  if(!result.ok)throw new Error('Portal posting failed; keep this transaction pending for reconciliation.');
+  return result;
+}
