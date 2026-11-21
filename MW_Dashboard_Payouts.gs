@@ -17,7 +17,8 @@ function mwPayoutDashboardDispatch(e) {
   var result;
   try {
     var actor = _mwFpAuthorize_(p.idToken);
-    if (p.action === 'fp_funds') result = {status:'ok', funds:_mwFpFunds_()};
+    if (/^fp_review_/.test(p.action)) result = _mwPrRoute_(p,actor);
+    else if (p.action === 'fp_funds') result = {status:'ok', funds:_mwFpFunds_()};
     else if (p.action === 'fp_balance') result = getFundBalanceForDashboard(p);
     else if (p.action === 'fp_preview') result = _mwFpPreview_(p, actor);
     else if (p.action === 'fp_save') result = _mwFpSave_(p, actor);
