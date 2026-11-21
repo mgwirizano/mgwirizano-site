@@ -36,4 +36,10 @@ function setup(){
  e.data['TRACK-010'][7][7]='PAID';e.data['TRACK-010'][7][4]=0;let p=e.c._mwPrProfile_('MW0083');assert.equal(p.obligations[1].status,'REVIEW');assert.equal(p.obligations[1].balance,10);
  e.data['TRACK-010'][7][7]='EXEMPT';e.data['TRACK-010'][7][3]='N/A';e.data['TRACK-010'][7][4]='N/A';assert.equal(e.c._mwPrProfile_('MW0083').obligations[1].status,'EXEMPT');
 }
+{
+ const e=setup();
+ for(const id of ['MW0001','MW0005','MW0007','MW0324','MW0369','MW0031'])assert(e.c._mwPrExempt_(id,'FUND-011',e.data['TRACK-011'][7],e.data.FUNDS[3]),id+' must be exempt');
+ assert(!e.c._mwPrExempt_('MW0083','FUND-011',e.data['TRACK-011'][7],e.data.FUNDS[3]));
+ assert.equal(e.writes(),0);
+}
 console.log('PASS: real row-10 headers and Fund column F; no registration rows; exact fund history; no reusable aggregate credit; overdue $15; source conservation; no duplicate allocation; existing credit moved once without new cash; targeted fund log/totals; zero-write preview; changed-data hold; interrupted-write resume; no automatic tracker reconciliation.');
