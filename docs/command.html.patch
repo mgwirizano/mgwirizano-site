@@ -1,0 +1,8 @@
+--- a/command.html
++++ b/command.html
+@@ -1992,4 +1992,5 @@
+ checkSession();
+ </script>
++<script src="MW_PayoutDashboard.js"></script>
+ <div id="toast"></div>
+ </body>
