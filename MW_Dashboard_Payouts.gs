@@ -2,7 +2,7 @@
 // New dashboard actions use POST only. No bank transfer or member-ledger writes.
 var MW_FP = {
   googleClientId: '703408034852-6l0ofo593604p3jc1frn0t90prp6se87.apps.googleusercontent.com',
-  leaderIds: ['MW0005','MW0001','MW0007'],
+  leaderIds: ['MW0001','MW0005','MW0007','MW0324','MW0369','MW0031'],
   adminRate: 0.05,
   headers: ['Date','Fund Code','Amount','Description','SENT BY','Platform','Receiver','Notes']
 };
