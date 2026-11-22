@@ -19,7 +19,8 @@ function mwPayoutDashboardDispatch(e) {
     var writes = ['fp_save','fp_review_apply','fp_review_resume'].indexOf(p.action) >= 0;
     // Check notification configuration before beginning a financial write.
     if (writes) _mwFpNotificationConfig_();
-    if(p.action==='fp_version')result={status:'ok',version:'2026-11-22.2',adminAvailable:typeof _mwAdminRoute_==='function',reviewAvailable:typeof _mwPrRoute_==='function'};
+    if(p.action==='fp_version')result={status:'ok',version:'2026-11-22.3',actionsAvailable:typeof _mwActRoute_==='function',adminAvailable:typeof _mwAdminRoute_==='function',reviewAvailable:typeof _mwPrRoute_==='function'};
+    else if (/^fp_actions_/.test(p.action))result=_mwActRoute_(p);
     else if (/^fp_admin_/.test(p.action)) result = _mwAdminRoute_(p);
     else if (/^fp_ops_/.test(p.action)) result = _mwOpsRoute_(p,actor);
     else if (/^fp_review_/.test(p.action)) result = _mwPrRoute_(p,actor);
@@ -54,8 +55,9 @@ function _mwFpNotify_(p,result) {
     if(p.action==='fp_save')lines=lines.concat(['PAYOUTS row: '+result.row,'Fund: '+String(p.fundCode || 'Organization'),
       'Amount: $'+Number(p.amount).toFixed(2),'Receiver: '+String(p.receiver || ''),'Bank reference: '+String(p.reference || '')]);
     else {lines.push('Mode: '+String(p.mode || ''));lines.push('Allocations: '+JSON.stringify(result.allocations || []));if(p.mode==='DISMISS')lines.push('Dismissed PAYMENTS row: '+p.sourceRow,'Reason: '+p.reason);}
+    if(result.memberReceipts&&result.memberReceipts.length)lines.push('Member receipts: '+result.memberReceipts.map(function(r){return 'PAYMENTS row '+r.row+': '+r.status;}).join('; '));
     lines.push('This confirms a recorded change. It does not confirm a bank transfer.');
-    var sent=sendEmail(cfg.email,'Dashboard change recorded | '+cfg.name,lines.join('\n'),{name:cfg.name,replyTo:cfg.email});
+    var table=[['Member','Fund','Amount','Balance before','Balance after']].concat((result.allocations||[]).map(function(a){return [a.memberId,a.fundCode,'$'+Number(a.amount).toFixed(2),a.previousBalance===undefined?'—':'$'+Number(a.previousBalance).toFixed(2),a.newBalance===undefined?'—':'$'+Number(a.newBalance).toFixed(2)];}));var summary=lines.filter(function(line){return line.indexOf('Allocations: ')!==0;}).join('\n');var html=typeof _mwActHtml_==='function'?_mwActHtml_('Dashboard change recorded',summary,table):'<div style="font-family:Arial,sans-serif;white-space:pre-wrap">'+summary.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];})+'</div>';var sent=sendEmail(cfg.email,'Dashboard change recorded | '+cfg.name,summary,{htmlBody:html,name:cfg.name,replyTo:cfg.email});
     if(sent===false)throw new Error('Email helper did not confirm sending.');
     return {status:'sent',timestamp:stamp,message:'Confirmation email sent to '+cfg.email+'.'};
   } catch(err) {
