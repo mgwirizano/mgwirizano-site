@@ -43,3 +43,5 @@ function setup(){
  assert.equal(e.writes(),0);
 }
 console.log('PASS: real row-10 headers and Fund column F; no registration rows; exact fund history; no reusable aggregate credit; overdue $15; source conservation; no duplicate allocation; existing credit moved once without new cash; targeted fund log/totals; zero-write preview; changed-data hold; interrupted-write resume; no automatic tracker reconciliation.');
+
+module.exports={setup};
