@@ -1,7 +1,7 @@
-/* Load after MW_PayoutDashboard.js. Uses its server-verified officer connection. */
+/* Load after MW_PayoutDashboard.js. Uses the existing dashboard; no extra login or PIN. */
 let prFeed=null,prOffset=0,prBusy=false,prProfile=null,prAction=null,prPreview=null,prProfileSequence=0,prFundSequence=0;
 const PR_HTML=`<section class="card fp-panel" id="sec-payment-review"><div class="card-header"><span class="card-title">Payments — newest first</span></div><div class="fp-body">
-<p>Reads PAYMENTS directly. Registration rows are excluded. Connect your officer account in the family payout section, then load payments.</p>
+<p>Reads PAYMENTS directly. Registration rows are excluded. Payments load automatically. Financial changes require a dry-run preview and confirmation.</p>
 <div class="fp-fields"><div><label for="pr-query">Member ID, name, sender or memo</label><input id="pr-query" placeholder="Search payments" onkeydown="if(event.key==='Enter')prLoad(0)"></div><div><label for="pr-filter">Show</label><select id="pr-filter" onchange="prLoad(0)"><option value="ALL">All non-registration payments</option><option value="REVIEW">Needs review</option></select></div></div>
 <div class="fp-actions"><button class="hero-btn primary" onclick="prLoad(0)">Load / refresh payments</button><button class="hero-btn secondary" id="pr-prev" onclick="prLoad(Math.max(0,prOffset-50))">Previous page</button><button class="hero-btn secondary" id="pr-next" onclick="prLoad(prOffset+50)">Next page</button></div>
 <div id="pr-message" role="status" aria-live="polite"></div><div id="pr-counts"></div><div id="pr-pending"></div><div id="pr-payments"></div>
@@ -19,6 +19,8 @@ async function prLoad(offset=0){
   document.getElementById('pr-payments').innerHTML=prTable(['Payment date','Member / sender','Amount','Type / fund','Status / issues','Action'],prFeed.payments.map(r=>[
    fpEscape(r.date||'Date needs review'),prProfileButton(r.memberId,r.name||r.memberId)+'<div>'+fpEscape(r.sender)+'</div>',fpMoney(r.amount),fpEscape(r.type)+'<br>'+fpEscape(r.fund||'No fund')+'<br><small>PAYMENTS row '+r.row+'</small>',fpEscape(r.status)+'<br>'+r.reasons.map(fpEscape).join('<br>'),'<button class="hero-btn secondary" onclick="prOpenPayment('+r.row+')">'+(r.canAllocate?'Fix / allocate':'Inspect')+'</button>'
   ]));
+  ['sec-members','sec-overview','sec-activity'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+  document.querySelectorAll('#main-content .card-title').forEach(e=>{if(['Priority pulse','Eligibility status'].includes(e.textContent.trim()))e.closest('.card').style.display='none';});
   document.getElementById('pr-pending').innerHTML=prFeed.pendingAction?'<div class="fp-note">Unfinished approved action: '+fpEscape(prFeed.pendingAction)+' <button class="hero-btn secondary" onclick="prResume()">Resume approved action</button></div>':'';
   const list=await fpCall('fp_funds'),select=document.getElementById('pr-fund'),cur=select.value;select.replaceChildren(new Option('Select a fund',''));list.funds.forEach(f=>select.add(new Option(f.code+' — '+f.deceased+' ('+f.status+')',f.code)));select.value=cur;
   prMessage('Newest to oldest by actual payment date; rows with no valid date are held for review.');
@@ -70,7 +72,7 @@ async function prPreviewAction(){
 async function prApplyAction(){
  if(prBusy||!prPreview)return;
  if(JSON.stringify(prPayload())!==JSON.stringify(prPreview.payload)){prInvalidate();return;}
- if(!confirm('Apply only the allocations shown in the dry run? This changes the specified ledger/tracker/credit records. No emails will be sent.'))return;
+ if(!confirm('Apply only the allocations shown in the dry run? This changes the specified ledger/tracker/credit records. A confirmation email will be sent after completion.'))return;
  const refreshMember=prAction?.mode==='CREDIT'?prAction.memberId:'';let applied=false;
  prBusy=true;ftBusy=true;const el=document.getElementById('pr-action-preview');document.getElementById('pr-apply').disabled=true;
  try{const d=await fpCall('fp_review_apply',{...prPreview.input,previewToken:prPreview.token,confirmed:'YES'});el.textContent=d.message;applied=true;prPreview=null;prAction=null;prMessage('Action recorded. Refresh payments and the member profile to verify.');}
@@ -91,8 +93,7 @@ runMemberLookup=function(){
  function mount(){
   const target=document.querySelector('#main-content .two-col');if(!target||document.getElementById('sec-payment-review'))return;
   target.insertAdjacentHTML('beforebegin',PR_HTML);
-  ['sec-members','sec-overview','sec-activity'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
-  document.querySelectorAll('#main-content .card-title').forEach(e=>{if(['Priority pulse','Eligibility status'].includes(e.textContent.trim()))e.closest('.card').style.display='none';});
+  prLoad(0);
  }
  new MutationObserver(mount).observe(document.getElementById('main-content'),{childList:true,subtree:true});mount();
 })();
