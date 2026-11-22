@@ -26,7 +26,7 @@ Select a fund, read the balance and calculation breakdown, then use the paid/unp
 
 - **Consolidated reminders:** enter selected IDs, preview each full email and confirm. One message per member; same-day reminder-log entries are held.
 - **Late fee management:** choose a fund and selected members; preview exact cells before/after. Only a verified unpaid $5 fee can be reversed. No paid-fee refund or new stored credit is inferred.
-- **5+ missed funds:** review selected final warnings and their existing template before sending. Warning eligibility alone never removes someone.
+- **4+ missed funds:** review selected final warnings and their existing template before sending. Warning eligibility alone never removes someone.
 - **Remove members:** requires a sent final notice, expired deadline, remaining notified arrears, Board approval/reference and opportunity for the member to present their case. Archive precedes MEMBERS deletion. PAYMENTS/TRACK remain; the member receives appeal contact information. This does not remove them from WhatsApp.
 - **Removed-member cleanup:** dated removal record and absence from MEMBERS required. Preview unpaid TRACK rows, archive first, then delete only reviewed rows. Paid/applied-credit history is retained to protect fund totals. Regenerate your pending report afterward with its existing function.
 - **Meeting slides:** preview active funds; confirmation runs your existing deck generator and its leadership notification.
@@ -43,10 +43,37 @@ Confirmed deputy badges: Nellie Yobe Bakuwa (MW0031), Deputy President; Dr Gift 
 
 ## Restored table controls and collection status
 
-The original registration member list is available within Contributions & review. Click headings to sort. Filters and CSV/PDF exports operate on the full matching member list. Select the checkboxes, then Bulk Reminder to preview separate balance statements for up to 20 members. Nothing is sent by selecting the rows.
+The original registration member list is available within Registration & members. Click headings to sort. Filters and CSV/PDF exports operate on the full matching member list. Select the checkboxes, then Bulk Reminder to preview separate balance statements for up to 20 members. Nothing is sent by selecting the rows.
 
 Fund member lists support name/ID search, paid/partial/unpaid/review filters, sorting, matching CSV/PDF exports and selected-member consolidated reminders. Review balances are excluded from verified outstanding totals. Contribution payment exports include all matching records in the selected sort order; they require this matching server update.
 
 A fund displays Closed once its due date has passed, stays visible in Funeral funds, and remains available for historical payments and payouts. The Active count includes only funds still within their collection window. The due date itself remains part of the open window.
 
 Profiles show available details immediately. Family names remain visible while separate claim checks load; an unavailable claim check is never treated as proof that there were no claims. The payment timeline includes registration receipts. Older financial records are not automatically reconciled while opening a profile.
+
+## Interactive daily work — v3
+
+Zelle and contribution review comes first, followed by the registration member table. Recent payments has its own tab. Open a member name for their profile or Inspect for the exact ledger row. The Overview cards, daily/monthly charts, credit totals and action references drill into their records.
+
+**Check a payment claim:** Daily work → Check member payment records → enter one or more IDs → Check selected members. Inspect posted payment rows, fund obligations and other memo rows mentioning those exact IDs. This is a read-only replacement for editing the hardcoded IDs in checkMembers(); none of that file’s fix functions run.
+
+**Resolve an unmatched payment:** allocate directly from its source row, preview exact shares, then confirm. The original source is automatically dismissed and excluded; posted child rows receive branded contribution receipts. If the money was already entered manually, use Already posted? Link existing payments, select its posted ledger rows, verify the intended member/fund split and preview. This resolves the source without recording cash twice.
+
+**Recover an email:** Inspect a confirmed payment or open its member payment history → Send unsent receipt. Check the HTML preview and recipient, then confirm. An uncertain/sending status requires checking sent mail first. Already-sent and reversed receipts are held. A saved financial transaction is never replayed to resend an email.
+
+**Reverse an erroneous contribution:** open the exact payment’s Reverse payment action, enter a reason and preview every affected value. The workflow requires consistent ledger/tracker/fund totals and one original fund-log match. It preserves history and restores only the reversed contribution’s balance; no money is refunded through the bank. Registration and unspent-credit reversals require verified balances; ambiguous or already-used credit remains held. For a verified unpaid $5 fee, choose Reverse late fee from Fund obligations.
+
+**Fund reports:** Daily work → Fund status reports → choose fund and Full/Pending-only → preview → confirm email to leadership. **Quarterly reports:** choose year, quarter and written Doc/PDF or optional meeting deck. The quarter’s receipts and outflows use the actual ledger dates. The optional deck is cumulative, separately labelled. Open the returned report/download links from the result panel.
+
+
+## Member follow-up and mobile update
+
+A read-only banner loads with the dashboard. Four or more verified overdue funds trigger a warning flag. Exemptions, paid/credit-covered funds and not-yet-due funds do not count. Sent warnings show their response deadline. After that date, remaining debt on the originally notified obligations triggers **Removal review needed**. Payment or applied credit resolves that notice; newer unrelated debt does not keep it open. Warning emails and Board-approved removal still require a preview and confirmation. Existing sent or uncertain delivery audits prevent blind repeat warnings. Run the separate archived cleanup preview after removal; paid and applied-credit history is preserved.
+
+In Admin workflows choose **Set registration alert window** and enter the actual start and end dates. Fee alerts remain inactive until dates are configured and the window closes. They apply only to members who joined in that cohort, use verified registration cash/prior credit, and have their own warning message and response deadline. This setting does not open/close the registration form or rewrite payment records.
+
+Mobile navigation scrolls within the tab bar. Tables with headings become labelled records, inputs stack, the profile drawer fills the screen, actions have touch-sized targets, and wide content stays inside its panel. Dark and light themes retain the existing colors. Synthetic layout/label checks pass; installed mobile-browser appearance remains to be checked.
+
+**Missed registrations:** scan in Registration & members, then choose **Recover selected missed registrations** and enter the exact row numbers. Preview assigns IDs above the known historical maximum, archives original rows, and preserves all financial cells, family details and existing IDs. Duplicate/shared emails and same-name records require review. No welcome email is sent by recovery; preview selected welcome resends next.
+
+The supplied original `onFormSubmit` is not replayed: it assigns a new ID even for an existing row, scans only current IDs, and clears credit / writes a numeric credit into the registration-status column. Its duplicate-email comparison also reads column A rather than B. This addon leaves that original handler unchanged. **Correct and test that original intake handler before opening the new registration form**; dashboard recovery does not fix the installed form trigger. The dashboard resend action uses a separate HTML message, tracks uncertain sends and preserves IDs/credit.
