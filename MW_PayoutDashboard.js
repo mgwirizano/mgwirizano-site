@@ -1,37 +1,29 @@
 /* Add after the dashboard main script. No existing login credentials are copied here. */
-const FP_PANEL_HTML="<section class=\"card fp-panel\" id=\"sec-family-payouts\">\n  <div class=\"card-header\"><span class=\"card-title\">Family fund balance &amp; payments</span></div>\n  <div class=\"fp-body\">\n    <p>Select any active or closed fund to see its recorded family share and payments already sent.</p>\n    <div id=\"fp-signin\"></div>\n    <button class=\"hero-btn secondary\" type=\"button\" onclick=\"fpConnect()\">Connect treasurer / secretary account</button>\n    <label for=\"fp-fund\">Fund</label>\n    <select id=\"fp-fund\" onchange=\"fpLoadBalance()\"><option value=\"\">Connect to load all funds</option></select>\n    <div class=\"fp-actions\"><button class=\"hero-btn secondary\" onclick=\"fpLoadBalance()\" type=\"button\">Refresh balance</button><button class=\"hero-btn primary\" type=\"button\" onclick=\"fpPrintReport()\">Print / save PDF report</button></div>\n    <div id=\"fp-status\" role=\"status\" aria-live=\"polite\"></div>\n    <div id=\"fp-summary\"></div>\n    <details><summary>Record a payment already sent</summary>\n      <p>This records a bank payment in PAYOUTS. It does not send money. Add missing historical payments here before relying on the remaining balance.</p>\n      <form id=\"fp-form\" onsubmit=\"event.preventDefault();fpPreviewPayment()\" oninput=\"fpInvalidate()\" onchange=\"fpInvalidate()\">\n        <div class=\"fp-fields\">\n          <div><label for=\"fp-type\">Payment category</label><select id=\"fp-type\"><option value=\"FAMILY\">Family payout / advance</option><option value=\"REFUND\">Refund</option><option value=\"EXPENSE\">Organization expense</option><option value=\"OTHER\">Other outgoing payment</option></select></div>\n          <div><label for=\"fp-date\">Actual payment date</label><input id=\"fp-date\" type=\"date\" required></div>\n          <div><label for=\"fp-amount\">Amount ($)</label><input id=\"fp-amount\" type=\"number\" min=\"0.01\" max=\"1000000\" step=\"0.01\" required placeholder=\"1500.00\"></div>\n          <div><label for=\"fp-receiver\">Receiver</label><input id=\"fp-receiver\" maxlength=\"500\" required autocomplete=\"off\"></div>\n          <div><label for=\"fp-platform\">Platform / paying account</label><input id=\"fp-platform\" maxlength=\"500\" required placeholder=\"Zelle from Chase\"></div>\n          <div><label for=\"fp-reference\">Bank confirmation / reference</label><input id=\"fp-reference\" maxlength=\"500\" required autocomplete=\"off\"></div>\n        </div>\n        <label for=\"fp-description\">Description</label><input id=\"fp-description\" maxlength=\"500\" required placeholder=\"$1,500 advance to the family\">\n        <label for=\"fp-notes\">Notes (optional)</label><input id=\"fp-notes\" maxlength=\"500\">\n        <p>For a non-family payment, choose its related fund above or \u201cNo fund / organization payment.\u201d</p>\n        <label style=\"display:flex;gap:10px;align-items:flex-start\"><input id=\"fp-reserveAdvance\" type=\"checkbox\" style=\"width:20px;min-height:20px;margin-top:4px\">This is an authorized family advance from reserves, even if it exceeds the currently recorded family share.</label>\n        <div class=\"fp-actions\"><button class=\"hero-btn secondary\" id=\"fp-preview-btn\" type=\"submit\">Preview only</button><button class=\"hero-btn primary\" id=\"fp-save-btn\" type=\"button\" disabled onclick=\"fpSavePayment()\">Confirm and record payment</button><button class=\"hero-btn secondary\" type=\"button\" onclick=\"fpResetPayment()\">New payment</button></div>\n      </form>\n      <div id=\"fp-preview\" role=\"status\" aria-live=\"polite\"></div>\n    </details>\n  </div>\n</section>\n";
+const FP_PANEL_HTML="<section class=\"card fp-panel\" id=\"sec-family-payouts\">\n  <div class=\"card-header\"><span class=\"card-title\">Family fund balance &amp; payments</span></div>\n  <div class=\"fp-body\">\n    <p>Select any active or closed fund to see its recorded family share and payments already sent.</p>\n    <label for=\"fp-fund\">Fund</label>\n    <select id=\"fp-fund\" onchange=\"fpLoadBalance()\"><option value=\"\">Loading funds\u2026</option></select>\n    <div class=\"fp-actions\"><button class=\"hero-btn secondary\" onclick=\"fpLoadBalance()\" type=\"button\">Refresh balance</button><button class=\"hero-btn primary\" type=\"button\" onclick=\"fpPrintReport()\">Print / save PDF report</button></div>\n    <div id=\"fp-status\" role=\"status\" aria-live=\"polite\"></div>\n    <div id=\"fp-summary\"></div>\n    <details><summary>Record a payment already sent</summary>\n      <p>This records a bank payment in PAYOUTS. It does not send money. Add missing historical payments here before relying on the remaining balance.</p>\n      <form id=\"fp-form\" onsubmit=\"event.preventDefault();fpPreviewPayment()\" oninput=\"fpInvalidate()\" onchange=\"fpInvalidate()\">\n        <div class=\"fp-fields\">\n          <div><label for=\"fp-type\">Payment category</label><select id=\"fp-type\"><option value=\"FAMILY\">Family payout / advance</option><option value=\"REFUND\">Refund</option><option value=\"EXPENSE\">Organization expense</option><option value=\"OTHER\">Other outgoing payment</option></select></div>\n          <div><label for=\"fp-date\">Actual payment date</label><input id=\"fp-date\" type=\"date\" required></div>\n          <div><label for=\"fp-amount\">Amount ($)</label><input id=\"fp-amount\" type=\"number\" min=\"0.01\" max=\"1000000\" step=\"0.01\" required placeholder=\"1500.00\"></div>\n          <div><label for=\"fp-receiver\">Receiver</label><input id=\"fp-receiver\" maxlength=\"500\" required autocomplete=\"off\"></div>\n          <div><label for=\"fp-platform\">Platform / paying account</label><input id=\"fp-platform\" maxlength=\"500\" required placeholder=\"Zelle from Chase\"></div>\n          <div><label for=\"fp-reference\">Bank confirmation / reference</label><input id=\"fp-reference\" maxlength=\"500\" required autocomplete=\"off\"></div>\n        </div>\n        <label for=\"fp-description\">Description</label><input id=\"fp-description\" maxlength=\"500\" required placeholder=\"$1,500 advance to the family\">\n        <label for=\"fp-notes\">Notes (optional)</label><input id=\"fp-notes\" maxlength=\"500\">\n        <p>For a non-family payment, choose its related fund above or \u201cNo fund / organization payment.\u201d</p>\n        <label style=\"display:flex;gap:10px;align-items:flex-start\"><input id=\"fp-reserveAdvance\" type=\"checkbox\" style=\"width:20px;min-height:20px;margin-top:4px\">This is an authorized family advance from reserves, even if it exceeds the currently recorded family share.</label>\n        <div class=\"fp-actions\"><button class=\"hero-btn secondary\" id=\"fp-preview-btn\" type=\"submit\">Preview only</button><button class=\"hero-btn primary\" id=\"fp-save-btn\" type=\"button\" disabled onclick=\"fpSavePayment()\">Confirm and record payment</button><button class=\"hero-btn secondary\" type=\"button\" onclick=\"fpResetPayment()\">New payment</button></div>\n      </form>\n      <div id=\"fp-preview\" role=\"status\" aria-live=\"polite\"></div>\n    </details>\n  </div>\n</section>\n";
 const FP_PANEL_CSS=".fp-panel{margin-bottom:20px;scroll-margin-top:100px}.fp-body{padding:20px;font-size:16px;line-height:1.6}.fp-body p{color:var(--text2);margin:0 0 14px}.fp-body label{display:block;font-size:14px;font-weight:600;margin:12px 0 5px}.fp-body input,.fp-body select{width:100%;min-height:44px;padding:10px 12px;background:var(--card2);color:var(--text);border:1px solid #52708c;border-radius:8px;font:inherit;max-width:100%}.fp-body input:focus,.fp-body select:focus{outline:2px solid var(--gmid);outline-offset:2px}.fp-fields{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}.fp-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.fp-body button{min-height:44px;font-size:14px}.fp-body button:disabled{opacity:.45;cursor:not-allowed}.fp-body details{border-top:1px solid var(--border);margin-top:20px;padding-top:16px}.fp-body summary{font-weight:700;cursor:pointer}.fp-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.fp-metric{background:var(--card2);padding:14px;border-radius:8px}.fp-metric span{display:block;font-size:14px;color:var(--text2)}.fp-metric strong{font-size:22px;color:var(--gmid)}.fp-note{background:rgba(214,139,12,.12);padding:12px;border-radius:8px;margin:12px 0;color:#f5d48a}.fp-table-wrap{overflow-x:auto}.fp-body table{width:100%;border-collapse:collapse;font-size:14px}.fp-body th,.fp-body td{text-align:left;border-bottom:1px solid var(--border);padding:10px;vertical-align:top}.fp-error{color:#ffb5b5;padding:10px 0}#fp-status{white-space:pre-wrap}#fp-signin{margin-bottom:10px}@media(max-width:760px){.fp-metrics{grid-template-columns:1fr 1fr}.fp-fields{grid-template-columns:1fr}.fp-body{padding:14px}.fp-actions button{flex:1 1 160px}}\n";
-// Only the new payout section uses this verified Google credential.
-// Existing registration, payment and dashboard calls are left unchanged.
-let fpCredential = '', fpSummary = null, fpPreview = null, fpRequestId = '', fpBusy = false;
+// No additional Google sign-in or PIN is required by this add-on.
+// Financial changes retain dry-run preview, explicit confirmation and receipt checks.
+let fpFundDetails = [], fpSummary = null, fpPreview = null, fpRequestId = '', fpBusy = false;
 function fpEscape(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function fpMoney(v){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(v)||0);}
 function fpStatus(message,error){const el=document.getElementById('fp-status');if(el){el.textContent=message;el.className=error?'fp-error':'';}}
 function fpInvalidate(){fpPreview=null;const b=document.getElementById('fp-save-btn');if(b)b.disabled=true;const el=document.getElementById('fp-preview');if(el)el.textContent='';}
 async function fpCall(action,params={}){
-  if(!fpCredential)throw Error('Connect your treasurer or secretary Google account first.');
-  const response=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({...params,action,idToken:fpCredential}),redirect:'follow'});
+  const response=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({...params,action}),redirect:'follow'});
   const data=await response.json();
   if(data.status!=='ok')throw Error(data.message||'Could not reach the payout service.');
   if(action==='fp_funds'&&!Array.isArray(data.funds))throw Error('Install the payout backend and POST dispatch line, then redeploy Apps Script.');
   return data;
-}
-function fpGoogleSignIn(response){fpCredential=response.credential;fpLoadFunds();}
-function fpConnect(){
-  if(!window.google?.accounts?.id){fpStatus('Google sign-in is still loading. Try again shortly.',true);return;}
-  google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:fpGoogleSignIn,auto_select:false});
-  google.accounts.id.renderButton(document.getElementById('fp-signin'),{theme:'filled_blue',size:'large',text:'signin_with',width:280});
-  fpStatus('Use the Google sign-in button above. Access is checked by the server.');
-  if(fpCredential)fpLoadFunds();
 }
 async function fpLoadFunds(){
   if(fpBusy)return;fpBusy=true;ftBusy=true;fpStatus('Loading funds…');
   try{
     const d=await fpCall('fp_funds'),sel=document.getElementById('fp-fund'),current=sel.value;
     sel.replaceChildren(new Option('No fund / organization payment',''));
+    fpFundDetails=d.funds;fpDecorateFundCards();
     d.funds.forEach(f=>sel.add(new Option(`${f.code} — ${f.deceased} (${f.status})`,f.code)));
     if(current)sel.value=current;
-    fpStatus('Connected. Select a fund to view its balance.');
+    fpStatus('Select a fund to view its balance. No records changed.');
   }catch(e){fpStatus(e.message,true);}finally{fpBusy=false;ftBusy=false;}
 }
 async function fpLoadBalance(){
@@ -91,6 +83,17 @@ function fpPrintReport(){
 }
 
 // Mount only inside the existing leadership dashboard, after its data renders.
+// Enrich existing fund cards without replacing their totals or controls.
+function fpDecorateFundCards(){
+  document.querySelectorAll('#sec-funds .fund-item').forEach(card=>{
+    const title=card.querySelector('.fund-name'),code=title?.textContent.match(/FUND-\d{3}/)?.[0];
+    const fund=fpFundDetails.find(f=>f.code===code);if(!fund)return;
+    let detail=card.querySelector('.fp-fund-details');
+    if(!detail){detail=document.createElement('div');detail.className='fp-fund-details';detail.style.cssText='font-size:13px;color:var(--text2);margin:6px 0 10px;line-height:1.6';title.after(detail);}
+    const text='Due date: '+(fund.deadline||'Not recorded')+' · Claiming member: '+(fund.beneficiaryName||'Name not recorded')+(fund.bereaved?' ('+fund.bereaved+')':'');
+    if(detail.textContent!==text)detail.textContent=text;
+  });
+}
 (function mountPayoutSection(){
   const style=document.createElement('style');style.textContent=FP_PANEL_CSS;document.head.appendChild(style);
   const previousBusy=isFixToolBusy;
@@ -100,9 +103,10 @@ function fpPrintReport(){
       !!(panel && Array.from(panel.querySelectorAll('input')).some(x=>x.type!=='checkbox' && x.value)) || previousBusy();
   };
   function mount(){
+    fpDecorateFundCards();
     if(document.getElementById('sec-family-payouts'))return;
     const target=document.querySelector('#main-content .two-col');
-    if(target)target.insertAdjacentHTML('beforebegin',FP_PANEL_HTML);
+    if(target){target.insertAdjacentHTML('beforebegin',FP_PANEL_HTML);fpLoadFunds();}
   }
   new MutationObserver(mount).observe(document.getElementById('main-content'),{childList:true,subtree:true});
   mount();
