@@ -41,9 +41,21 @@ function fpRender(){
   el.innerHTML='<div class="fp-metrics">'+metrics.map(([l,v])=>'<div class="fp-metric"><span>'+fpEscape(l)+'<\/span><strong>'+fpMoney(v)+'<\/strong><\/div>').join('')+'<\/div>'+
     '<p>'+d.fullCount+' fully paid / credit-covered; '+d.partialCount+' partial; '+d.pendingCount+' pending; '+d.excludedCount+' exempt. Credit-covered: '+d.creditCount+'.<\/p>'+
     '<div class="fp-note">'+fpEscape(d.method)+' Missing payouts will overstate the remaining share.'+(d.overpaid?' Recorded payouts exceed this calculated share by '+fpMoney(d.overpaid)+'.':'')+'<\/div>'+
-    '<details><summary>Calculation notes ('+d.warnings.length+')<\/summary><ul>'+d.warnings.map(w=>'<li>'+fpEscape(w)+'<\/li>').join('')+'<\/ul><\/details>'+
+    '<details><summary>Calculation notes ('+d.warnings.length+')<\/summary>'+fpCalculationBreakdown(d)+'<ul>'+d.warnings.map(w=>'<li>'+fpEscape(w)+'<\/li>').join('')+'<\/ul><\/details>'+
     '<h3 style="margin:16px 0 8px;font-size:16px">Recorded outgoing payments<\/h3><div class="fp-table-wrap"><table><thead><tr><th>Date<\/th><th>Type<\/th><th>Receiver<\/th><th>Description<\/th><th>Amount<\/th><\/tr><\/thead><tbody>'+d.payouts.map(p=>'<tr><td>'+fpEscape(p.date)+'<\/td><td>'+fpEscape(p.type)+'<\/td><td>'+fpEscape(p.receiver)+'<\/td><td>'+fpEscape(p.description)+'<\/td><td>'+fpMoney(p.amount)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><\/div>';
 }
+function fpCalculationRows(d){
+ const full=Number(d.fullCount)||0,base=Number(d.fund.baseAmount)||0,fullBase=Math.round(full*base*100)/100,partial=Math.round((d.coreBase-fullBase)*100)/100;
+ return [
+ ['Fully paid / credit-covered contributors (× '+fpMoney(base)+')',full+' × '+fpMoney(base)+' = '+fpMoney(fullBase)],
+ ['Partial payments · core amount included',fpMoney(partial)],
+ ['Core family fund base ('+fpMoney(base)+' cap per person)',fpMoney(d.coreBase)],
+ ['Admin fee (5% of core base)','− '+fpMoney(d.adminFee)],
+ ['Total core share to family',fpMoney(d.familyShare)],
+ ['Prior family payouts already sent','− '+fpMoney(d.familyPaid)],
+ ['NET REMAINING TO SEND TO FAMILY',fpMoney(d.remaining)]];
+}
+function fpCalculationBreakdown(d){return '<section class="mw-calculation"><h3>'+fpEscape(d.fund.code)+' — '+fpEscape(d.fund.deceased)+'</h3><p>How the remaining family share is calculated</p>'+fpCalculationRows(d).map(([label,value],i)=>'<div class="mw-calculation-row '+(i===6?'mw-calculation-total':'')+'"><span>'+fpEscape(label)+'</span><strong>'+fpEscape(value)+'</strong></div>').join('')+'<p class="mw-calculation-footnote">'+Number(d.creditCount||0)+' credit-covered contributors are included above. Partial amounts follow the calculation notes; recorded late fees and amounts above the core cap are excluded from this family share.</p></section>';}
 function fpPayload(){
   if(!fpRequestId)fpRequestId=crypto.randomUUID();
   const p={requestId:fpRequestId,fundCode:document.getElementById('fp-fund').value,reserveAdvance:document.getElementById('fp-reserveAdvance').checked?'YES':'NO'};
@@ -79,7 +91,7 @@ function fpPrintReport(){
   if(!fpSummary){fpStatus('Load a fund balance first.',true);return;}
   const d=fpSummary,w=window.open('','_blank');if(!w){fpStatus('Allow a new window to print the report.',true);return;}
   const metrics=[['Core contribution base',d.coreBase],['Administration (5%)',-d.adminFee],['Family share',d.familyShare],['Family payments recorded',-d.familyPaid],['Remaining family share',d.remaining],['Other outgoing payments (excluded from family payouts)',d.otherOutgoings]];
-  w.document.write('<!doctype html><html><head><title>'+fpEscape(d.fund.code)+' Family Fund Report<\/title><style>body{font:12pt Arial,sans-serif;color:#14263b;margin:32px;line-height:1.5}h1{font-size:20pt}table{width:100%;border-collapse:collapse;margin:16px 0}td,th{padding:8px;text-align:left;border-bottom:1px solid #bbc8d2}tr{break-inside:avoid}thead{display:table-header-group}th{background:#eaf5ed}li{margin-bottom:5px}@media print{button{display:none}@page{margin:16mm}}<\/style><\/head><body><button onclick="window.print()">Print / save PDF<\/button><h1>Mgwirizano Watsopano<\/h1><h2>'+fpEscape(d.fund.code)+' — '+fpEscape(d.fund.deceased)+'<\/h2><p>Recorded family fund report | As of '+fpEscape(d.calculatedAt)+'<\/p><table><tbody>'+metrics.map(([l,v])=>'<tr><th>'+fpEscape(l)+'<\/th><td>'+fpMoney(v)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><p>'+fpEscape(d.method)+'<\/p><p><strong>Enter all missing historical payouts before relying on the remaining share. This report is not a bank reconciliation.<\/strong><\/p><h2>Payout history<\/h2><table><thead><tr><th>Date<\/th><th>Type<\/th><th>Receiver<\/th><th>Description<\/th><th>Amount<\/th><\/tr><\/thead><tbody>'+d.payouts.map(p=>'<tr><td>'+fpEscape(p.date)+'<\/td><td>'+fpEscape(p.type)+'<\/td><td>'+fpEscape(p.receiver)+'<\/td><td>'+fpEscape(p.description)+'<\/td><td>'+fpMoney(p.amount)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><h2>Calculation notes<\/h2><ul>'+d.warnings.map(n=>'<li>'+fpEscape(n)+'<\/li>').join('')+'<\/ul><h2>Member contribution breakdown<\/h2><table><thead><tr><th>Member<\/th><th>Name<\/th><th>Status<\/th><th>Recorded paid<\/th><th>Core share<\/th><\/tr><\/thead><tbody>'+d.roster.map(r=>'<tr><td>'+fpEscape(r.memberId)+'<\/td><td>'+fpEscape(r.name)+'<\/td><td>'+fpEscape(r.status)+'<\/td><td>'+fpMoney(r.recordedPaid)+'<\/td><td>'+fpMoney(r.baseShare)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><\/body><\/html>');w.document.close();
+  w.document.write('<!doctype html><html><head><title>'+fpEscape(d.fund.code)+' Family Fund Report<\/title><style>body{font:12pt Arial,sans-serif;color:#14263b;margin:32px;line-height:1.5}h1{font-size:20pt}table{width:100%;border-collapse:collapse;margin:16px 0}td,th{padding:8px;text-align:left;border-bottom:1px solid #bbc8d2}tr{break-inside:avoid}thead{display:table-header-group}th{background:#eaf5ed}li{margin-bottom:5px}@media print{button{display:none}@page{margin:16mm}}<\/style><\/head><body><button onclick="window.print()">Print / save PDF<\/button><h1>Mgwirizano Watsopano<\/h1><h2>'+fpEscape(d.fund.code)+' — '+fpEscape(d.fund.deceased)+'<\/h2><p>Recorded family fund report | As of '+fpEscape(d.calculatedAt)+'<\/p><table><tbody>'+metrics.map(([l,v])=>'<tr><th>'+fpEscape(l)+'<\/th><td>'+fpMoney(v)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><p>'+fpEscape(d.method)+'<\/p><p><strong>Enter all missing historical payouts before relying on the remaining share. This report is not a bank reconciliation.<\/strong><\/p><h2>Payout history<\/h2><table><thead><tr><th>Date<\/th><th>Type<\/th><th>Receiver<\/th><th>Description<\/th><th>Amount<\/th><\/tr><\/thead><tbody>'+d.payouts.map(p=>'<tr><td>'+fpEscape(p.date)+'<\/td><td>'+fpEscape(p.type)+'<\/td><td>'+fpEscape(p.receiver)+'<\/td><td>'+fpEscape(p.description)+'<\/td><td>'+fpMoney(p.amount)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><h2>Family share calculation<\/h2><table><tbody>'+fpCalculationRows(d).map(([l,v])=>'<tr><th>'+fpEscape(l)+'<\/th><td>'+fpEscape(v)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><h2>Family share calculation<\/h2><table><tbody>'+fpCalculationRows(d).map(([l,v])=>'<tr><th>'+fpEscape(l)+'<\/th><td>'+fpEscape(v)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><h2>Calculation notes<\/h2><ul>'+d.warnings.map(n=>'<li>'+fpEscape(n)+'<\/li>').join('')+'<\/ul><h2>Member contribution breakdown<\/h2><table><thead><tr><th>Member<\/th><th>Name<\/th><th>Status<\/th><th>Recorded paid<\/th><th>Core share<\/th><\/tr><\/thead><tbody>'+d.roster.map(r=>'<tr><td>'+fpEscape(r.memberId)+'<\/td><td>'+fpEscape(r.name)+'<\/td><td>'+fpEscape(r.status)+'<\/td><td>'+fpMoney(r.recordedPaid)+'<\/td><td>'+fpMoney(r.baseShare)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><\/body><\/html>');w.document.close();
 }
 
 // Mount only inside the existing leadership dashboard, after its data renders.
@@ -102,8 +114,8 @@ function fpDecorateFundCards(){
 // Move existing nodes only; all original handlers, forms and financial data remain intact.
 let mwWorkspaceView='payments';
 function mwSelectWorkspace(view){
-  mwWorkspaceView=view==='payouts'?'payouts':'payments';
-  [['payments','sec-payment-review'],['payouts','sec-family-payouts']].forEach(([name,id])=>{
+  mwWorkspaceView=['payouts','notices'].includes(view)?view:'payments';
+  [['payments','sec-payment-review'],['payouts','sec-family-payouts'],['notices','sec-notice-review']].forEach(([name,id])=>{
     const panel=document.getElementById(id),button=document.getElementById('mw-tab-'+name);
     if(panel)panel.classList.toggle('mw-view-hidden',name!==mwWorkspaceView);
     if(button){button.setAttribute('aria-selected',String(name===mwWorkspaceView));button.tabIndex=name===mwWorkspaceView?0:-1;}
@@ -111,24 +123,32 @@ function mwSelectWorkspace(view){
 }
 function mwWorkspaceKey(event){
  if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
- event.preventDefault();const next=event.key==='Home'?'payments':event.key==='End'?'payouts':mwWorkspaceView==='payments'?'payouts':'payments';
- mwSelectWorkspace(next);document.getElementById('mw-tab-'+next)?.focus();
+ event.preventDefault();const names=['payments','payouts','notices'],i=names.indexOf(mwWorkspaceView),next=event.key==='Home'?'payments':event.key==='End'?'notices':names[(i+(event.key==='ArrowLeft'?2:1))%3];
+ mwSelectWorkspace(next);document.getElementById('mw-tab-'+next)?.focus();if(next==='notices'&&typeof mwNoticeLoad==='function')mwNoticeLoad();
 }
+function mwSetTheme(theme){
+ const light=theme==='light';document.body.classList.toggle('mw-light',light);
+ try{localStorage.setItem('mw-dashboard-theme',light?'light':'dark');}catch(_){}
+ const button=document.getElementById('mw-theme-toggle');if(button){button.textContent=light?'Dark mode':'Light mode';button.setAttribute('aria-pressed',String(light));}
+}
+function mwToggleTheme(){mwSetTheme(document.body.classList.contains('mw-light')?'dark':'light');}
 function mwArrangeWorkspace(){
  const main=document.getElementById('main-content'),legacy=main?.querySelector('.two-col');
  if(!legacy)return;
  document.body.classList.add('mw-modern');
+ const head=document.querySelector('.header-right');if(head&&!document.getElementById('mw-theme-toggle')){const b=document.createElement('button');b.id='mw-theme-toggle';b.type='button';b.className='hero-btn secondary';b.onclick=mwToggleTheme;head.prepend(b);let theme='dark';try{theme=localStorage.getItem('mw-dashboard-theme')||'dark';}catch(_){}mwSetTheme(theme);}
+
  if(!document.getElementById('mw-workspace')){
   const heading=document.createElement('section');heading.id='mw-page-heading';heading.className='mw-page-heading';
   heading.innerHTML='<div><div class="mw-eyebrow">Leadership workspace</div><h1>Payments &amp; funeral funds</h1><p>A clear view of contributions, family payouts and member payment history.</p></div><span class="mw-heading-tag">Mgwirizano Watsopano</span>';
   main.prepend(heading);
   const shell=document.createElement('div');shell.id='mw-workspace';shell.className='mw-workspace';
-  shell.innerHTML='<div class="mw-work-main" id="mw-work-main"><div class="mw-work-tabs" role="tablist" aria-label="Dashboard workspace" onkeydown="mwWorkspaceKey(event)"><button type="button" role="tab" id="mw-tab-payments" aria-controls="sec-payment-review" aria-selected="true" onclick="mwSelectWorkspace(\'payments\')">Contributions &amp; review</button><button type="button" role="tab" id="mw-tab-payouts" aria-controls="sec-family-payouts" aria-selected="false" onclick="mwSelectWorkspace(\'payouts\')">Fund balances &amp; payouts</button></div><div id="mw-work-panels"></div></div><aside class="mw-sidebar" id="mw-sidebar" aria-label="Fund capacity and fundraiser overview"></aside>';
+  shell.innerHTML='<div class="mw-work-main" id="mw-work-main"><div class="mw-work-tabs" role="tablist" aria-label="Dashboard workspace" onkeydown="mwWorkspaceKey(event)"><button type="button" role="tab" id="mw-tab-payments" aria-controls="sec-payment-review" aria-selected="true" onclick="mwSelectWorkspace(\'payments\')">Contributions &amp; review</button><button type="button" role="tab" id="mw-tab-payouts" aria-controls="sec-family-payouts" aria-selected="false" onclick="mwSelectWorkspace(\'payouts\')">Fund balances &amp; payouts</button><button type="button" role="tab" id="mw-tab-notices" aria-controls="sec-notice-review" aria-selected="false" onclick="mwSelectWorkspace(\'notices\');mwNoticeLoad()">5+ missed funds</button></div><div id="mw-work-panels"></div></div><aside class="mw-sidebar" id="mw-sidebar" aria-label="Fund capacity and fundraiser overview"></aside>';
   legacy.before(shell);
  }
  const left=document.getElementById('mw-work-main'),panels=document.getElementById('mw-work-panels'),side=document.getElementById('mw-sidebar');
  const lookup=document.getElementById('lookup-input')?.closest('.card');if(lookup&&lookup.parentNode!==left)left.prepend(lookup);
- ['sec-payment-review','sec-family-payouts'].forEach(id=>{const el=document.getElementById(id);if(el&&el.parentNode!==panels){panels.append(el);el.setAttribute('role','tabpanel');el.setAttribute('aria-labelledby',id==='sec-payment-review'?'mw-tab-payments':'mw-tab-payouts');}});
+ ['sec-payment-review','sec-family-payouts','sec-notice-review'].forEach(id=>{const el=document.getElementById(id);if(el&&el.parentNode!==panels){panels.append(el);el.setAttribute('role','tabpanel');el.setAttribute('aria-labelledby',id==='sec-payment-review'?'mw-tab-payments':id==='sec-notice-review'?'mw-tab-notices':'mw-tab-payouts');}});
  const right=legacy.querySelector('.right-col');if(right&&right.parentNode!==side)side.append(right);
  // Remove registration-focused cards from the sidebar, preserving their original nodes.
  side.querySelectorAll('.card-title').forEach(title=>{if(['Priority pulse','Eligibility status'].includes(title.textContent.trim()))title.closest('.card').style.display='none';});
