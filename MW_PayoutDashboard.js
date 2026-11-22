@@ -32,7 +32,7 @@ async function fpLoadBalance(){
   document.getElementById('fp-summary').replaceChildren();
   if(!code){fpStatus('Select a fund for its balance; organization payments can be recorded without one.');return;}
   if(fpBusy)return;fpBusy=true;ftBusy=true;fpStatus('Reading recorded balances and payout history…');
-  try{fpSummary=await fpCall('fp_balance',{fundCode:code});fpRender();fpStatus('Read-only balance loaded. No records changed.');}
+  try{fpSummary=await fpCall('fp_balance',{fundCode:code});fpRender();fpStatus('Read-only balance loaded. No records changed.');if(typeof mwFundRoster==='function')await mwFundRoster(code,'fp-fund-roster');}
   catch(e){fpStatus(e.message,true);}finally{fpBusy=false;ftBusy=false;}
 }
 function fpRender(){
@@ -42,7 +42,7 @@ function fpRender(){
     '<p>'+d.fullCount+' fully paid / credit-covered; '+d.partialCount+' partial; '+d.pendingCount+' pending; '+d.excludedCount+' exempt. Credit-covered: '+d.creditCount+'.<\/p>'+
     '<div class="fp-note">'+fpEscape(d.method)+' Missing payouts will overstate the remaining share.'+(d.overpaid?' Recorded payouts exceed this calculated share by '+fpMoney(d.overpaid)+'.':'')+'<\/div>'+
     '<details><summary>Calculation notes ('+d.warnings.length+')<\/summary>'+fpCalculationBreakdown(d)+'<ul>'+d.warnings.map(w=>'<li>'+fpEscape(w)+'<\/li>').join('')+'<\/ul><\/details>'+
-    '<h3 style="margin:16px 0 8px;font-size:16px">Recorded outgoing payments<\/h3><div class="fp-table-wrap"><table><thead><tr><th>Date<\/th><th>Type<\/th><th>Receiver<\/th><th>Description<\/th><th>Amount<\/th><\/tr><\/thead><tbody>'+d.payouts.map(p=>'<tr><td>'+fpEscape(p.date)+'<\/td><td>'+fpEscape(p.type)+'<\/td><td>'+fpEscape(p.receiver)+'<\/td><td>'+fpEscape(p.description)+'<\/td><td>'+fpMoney(p.amount)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><\/div>';
+    '<div id="fp-fund-roster"></div><h3 style="margin:16px 0 8px;font-size:16px">Recorded outgoing payments<\/h3><div class="fp-table-wrap"><table><thead><tr><th>Date<\/th><th>Type<\/th><th>Receiver<\/th><th>Description<\/th><th>Amount<\/th><\/tr><\/thead><tbody>'+d.payouts.map(p=>'<tr><td>'+fpEscape(p.date)+'<\/td><td>'+fpEscape(p.type)+'<\/td><td>'+fpEscape(p.receiver)+'<\/td><td>'+fpEscape(p.description)+'<\/td><td>'+fpMoney(p.amount)+'<\/td><\/tr>').join('')+'<\/tbody><\/table><\/div>';
 }
 function fpCalculationRows(d){
  const full=Number(d.fullCount)||0,base=Number(d.fund.baseAmount)||0,fullBase=Math.round(full*base*100)/100,partial=Math.round((d.coreBase-fullBase)*100)/100;
@@ -114,10 +114,10 @@ function fpDecorateFundCards(){
 }
 
 // Move existing nodes only; all original handlers, forms and financial data remain intact.
-let mwWorkspaceView='payments';
+let mwWorkspaceView='overview';
 function mwSelectWorkspace(view){
-  mwWorkspaceView=['payouts','notices'].includes(view)?view:'payments';
-  [['payments','sec-payment-review'],['payouts','sec-family-payouts'],['notices','sec-notice-review']].forEach(([name,id])=>{
+  mwWorkspaceView=['overview','payouts','notices','admin'].includes(view)?view:'payments';
+  [['overview','sec-dashboard-overview'],['payments','sec-payment-review'],['payouts','sec-family-payouts'],['notices','sec-notice-review'],['admin','sec-admin-workflows']].forEach(([name,id])=>{
     const panel=document.getElementById(id),button=document.getElementById('mw-tab-'+name);
     if(panel)panel.classList.toggle('mw-view-hidden',name!==mwWorkspaceView);
     if(button){button.setAttribute('aria-selected',String(name===mwWorkspaceView));button.tabIndex=name===mwWorkspaceView?0:-1;}
@@ -125,8 +125,8 @@ function mwSelectWorkspace(view){
 }
 function mwWorkspaceKey(event){
  if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
- event.preventDefault();const names=['payments','payouts','notices'],i=names.indexOf(mwWorkspaceView),next=event.key==='Home'?'payments':event.key==='End'?'notices':names[(i+(event.key==='ArrowLeft'?2:1))%3];
- mwSelectWorkspace(next);document.getElementById('mw-tab-'+next)?.focus();if(next==='notices'&&typeof mwNoticeLoad==='function')mwNoticeLoad();
+ event.preventDefault();const names=['overview','payments','payouts','notices','admin'],i=names.indexOf(mwWorkspaceView),next=event.key==='Home'?'overview':event.key==='End'?'admin':names[(i+(event.key==='ArrowLeft'?4:1))%5];
+ mwSelectWorkspace(next);if(next==='overview'&&typeof mwLoadOverview==='function')mwLoadOverview();document.getElementById('mw-tab-'+next)?.focus();if(next==='admin'&&typeof mwAdminPrepare==='function')mwAdminPrepare();if(next==='notices'&&typeof mwNoticeLoad==='function')mwNoticeLoad();
 }
 function mwSetTheme(theme){
  const light=theme==='light';document.body.classList.toggle('mw-light',light);
@@ -138,6 +138,8 @@ function mwArrangeWorkspace(){
  const main=document.getElementById('main-content'),legacy=main?.querySelector('.two-col');
  if(!legacy)return;
  document.body.classList.add('mw-modern');
+ const banner=document.getElementById('sec-overview');if(banner)banner.style.display='grid';
+ main.querySelectorAll('.stat-label').forEach(label=>{if(label.textContent==='Outstanding')label.textContent='Registration outstanding';if(label.textContent==='Bank Balance')label.textContent='Recorded balance';});
  const head=document.querySelector('.header-right');if(head&&!document.getElementById('mw-theme-toggle')){const b=document.createElement('button');b.id='mw-theme-toggle';b.type='button';b.className='hero-btn secondary';b.onclick=mwToggleTheme;head.prepend(b);let theme='dark';try{theme=localStorage.getItem('mw-dashboard-theme')||'dark';}catch(_){}mwSetTheme(theme);}
 
  if(!document.getElementById('mw-workspace')){
@@ -145,12 +147,12 @@ function mwArrangeWorkspace(){
   heading.innerHTML='<div><div class="mw-eyebrow">Leadership workspace</div><h1>Payments &amp; funeral funds</h1><p>A clear view of contributions, family payouts and member payment history.</p></div><span class="mw-heading-tag">Mgwirizano Watsopano</span>';
   main.prepend(heading);
   const shell=document.createElement('div');shell.id='mw-workspace';shell.className='mw-workspace';
-  shell.innerHTML='<div class="mw-work-main" id="mw-work-main"><div class="mw-work-tabs" role="tablist" aria-label="Dashboard workspace" onkeydown="mwWorkspaceKey(event)"><button type="button" role="tab" id="mw-tab-payments" aria-controls="sec-payment-review" aria-selected="true" onclick="mwSelectWorkspace(\'payments\')">Contributions &amp; review</button><button type="button" role="tab" id="mw-tab-payouts" aria-controls="sec-family-payouts" aria-selected="false" onclick="mwSelectWorkspace(\'payouts\')">Fund balances &amp; payouts</button><button type="button" role="tab" id="mw-tab-notices" aria-controls="sec-notice-review" aria-selected="false" onclick="mwSelectWorkspace(\'notices\');mwNoticeLoad()">5+ missed funds</button></div><div id="mw-work-panels"></div></div><aside class="mw-sidebar" id="mw-sidebar" aria-label="Fund capacity and fundraiser overview"></aside>';
+  shell.innerHTML='<div class="mw-work-main" id="mw-work-main"><div class="mw-work-tabs" role="tablist" aria-label="Dashboard workspace" onkeydown="mwWorkspaceKey(event)"><button type="button" role="tab" id="mw-tab-overview" aria-controls="sec-dashboard-overview" aria-selected="true" onclick="mwSelectWorkspace(\'overview\');mwLoadOverview()">Overview</button><button type="button" role="tab" id="mw-tab-payments" aria-controls="sec-payment-review" aria-selected="true" onclick="mwSelectWorkspace(\'payments\')">Contributions &amp; review</button><button type="button" role="tab" id="mw-tab-payouts" aria-controls="sec-family-payouts" aria-selected="false" onclick="mwSelectWorkspace(\'payouts\')">Fund balances &amp; payouts</button><button type="button" role="tab" id="mw-tab-notices" aria-controls="sec-notice-review" aria-selected="false" onclick="mwSelectWorkspace(\'notices\');mwNoticeLoad()">5+ missed funds</button><button type="button" role="tab" id="mw-tab-admin" aria-controls="sec-admin-workflows" aria-selected="false" onclick="mwSelectWorkspace(\'admin\');mwAdminPrepare()">Admin workflows</button></div><div id="mw-work-panels"></div></div><aside class="mw-sidebar" id="mw-sidebar" aria-label="Fund capacity and fundraiser overview"></aside>';
   legacy.before(shell);
  }
  const left=document.getElementById('mw-work-main'),panels=document.getElementById('mw-work-panels'),side=document.getElementById('mw-sidebar');
  const lookup=document.getElementById('lookup-input')?.closest('.card');if(lookup&&lookup.parentNode!==left)left.prepend(lookup);
- ['sec-payment-review','sec-family-payouts','sec-notice-review'].forEach(id=>{const el=document.getElementById(id);if(el&&el.parentNode!==panels){panels.append(el);el.setAttribute('role','tabpanel');el.setAttribute('aria-labelledby',id==='sec-payment-review'?'mw-tab-payments':id==='sec-notice-review'?'mw-tab-notices':'mw-tab-payouts');}});
+ ['sec-dashboard-overview','sec-payment-review','sec-family-payouts','sec-notice-review','sec-admin-workflows'].forEach(id=>{const el=document.getElementById(id);if(el&&el.parentNode!==panels){panels.append(el);el.setAttribute('role','tabpanel');el.setAttribute('aria-labelledby',id==='sec-dashboard-overview'?'mw-tab-overview':id==='sec-payment-review'?'mw-tab-payments':id==='sec-notice-review'?'mw-tab-notices':id==='sec-admin-workflows'?'mw-tab-admin':'mw-tab-payouts');}});
  const right=legacy.querySelector('.right-col');if(right&&right.parentNode!==side)side.append(right);
  // Remove registration-focused cards from the sidebar, preserving their original nodes.
  side.querySelectorAll('.card-title').forEach(title=>{if(['Priority pulse','Eligibility status'].includes(title.textContent.trim()))title.closest('.card').style.display='none';});
