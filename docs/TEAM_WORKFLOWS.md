@@ -40,3 +40,13 @@ Every workflow starts with a dry run. A changed source invalidates the preview. 
 Profiles show joined date, emergency contact, officer/Board badges, registration confirmation, obligations, payments, beneficiaries and claimed funds. A prior declared-person claim shows fund number and opening date; uncertain name matches are held for identity review. Ongoing funds within their deadline do not count as overdue arrears. Any verified overdue arrears hold benefits; two show At Risk and three or more Ineligible. Enrollment window, beneficiary declaration before loss and restoration history still require evidence for claim approval.
 
 Confirmed deputy badges: Nellie Yobe Bakuwa (MW0031), Deputy President; Dr Gift Ligomeka (MW0324), Deputy Treasurer; Vincent Saka (MW0369), Deputy Secretary. Board roster uses the 13 supplied IDs. Officer exemption does not extend to spouses.
+
+## Restored table controls and collection status
+
+The original registration member list is available within Contributions & review. Click headings to sort. Filters and CSV/PDF exports operate on the full matching member list. Select the checkboxes, then Bulk Reminder to preview separate balance statements for up to 20 members. Nothing is sent by selecting the rows.
+
+Fund member lists support name/ID search, paid/partial/unpaid/review filters, sorting, matching CSV/PDF exports and selected-member consolidated reminders. Review balances are excluded from verified outstanding totals. Contribution payment exports include all matching records in the selected sort order; they require this matching server update.
+
+A fund displays Closed once its due date has passed, stays visible in Funeral funds, and remains available for historical payments and payouts. The Active count includes only funds still within their collection window. The due date itself remains part of the open window.
+
+Profiles show available details immediately. Family names remain visible while separate claim checks load; an unavailable claim check is never treated as proof that there were no claims. The payment timeline includes registration receipts. Older financial records are not automatically reconciled while opening a profile.
