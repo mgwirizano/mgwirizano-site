@@ -4,7 +4,7 @@
 
 1. Add `MW_Dashboard_PaymentReview.gs` as a new Apps Script file. Do not replace your payment scanner, late-fee manager, registration code or doGet.
 2. Update `MW_Dashboard_Payouts.gs` to the included version; it adds dispatch of `fp_review_*` actions. The single hook already described at the top of your existing doPost stays the same. Do not add it twice.
-3. Keep `PAYOUT_ADMIN_EMAILS` configured for the authorized treasurer/secretary Google accounts. The new review/profile and write actions use the same server-verified sign-in.
+3. No additional Google login or PIN is used. Keep the leadership notification email configured in SETTINGS. See INSTALL.md for access and notification behavior.
 4. Add `MW_PaymentReview.js` to the root of the GitHub site. Include both files after the existing main dashboard script near the bottom of command.html:
 
    ```html
@@ -34,12 +34,12 @@
 
 ## Allocate an unresolved or lump-sum payment
 
-1. Connect your officer Google account in the payout section, then load payments.
+1. Open the dashboard; payments load automatically.
 2. Choose **Needs review**, then **Fix / allocate** on an unresolved source row.
 3. Enter explicit member IDs, fundraiser codes and dollar shares. You can allocate one transfer across multiple members and funds. Enter `CREDIT` for an explicitly approved excess; nothing is guessed or automatically redirected.
 4. Shares must total the original amount exactly. An allocation cannot exceed the target obligation. Exempt, already paid, duplicated or inconsistent tracker targets are held for review.
 5. Click **Dry run / preview**. Inspect the exact target rows/cells and before/after amounts. Nothing is saved or emailed.
-6. Click **Confirm and apply** only after verifying the preview. The selected source remains as an audit record marked SPLIT-PROCESSED; confirmed child allocations are appended. Only the targeted TRACK rows, fund logs, numerical FUNDS totals and explicitly assigned credit balances are updated.
+6. Click **Confirm and apply** only after verifying the preview. The selected source remains as an audit record marked SPLIT-PROCESSED; confirmed child allocations are appended. Only the targeted TRACK rows, fund logs, numerical FUNDS totals and explicitly assigned credit balances are updated. A completion email is sent to leadership after a successful dashboard action.
 
 Confirmed or SETTLED rows, reversal guards and previously split sources cannot be allocated a second time by this form. A confirmed row with no memo is inspectable; it is not automatically charged again or reassigned.
 
