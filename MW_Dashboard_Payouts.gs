@@ -19,7 +19,8 @@ function mwPayoutDashboardDispatch(e) {
     var writes = ['fp_save','fp_review_apply','fp_review_resume'].indexOf(p.action) >= 0;
     // Check notification configuration before beginning a financial write.
     if (writes) _mwFpNotificationConfig_();
-    if (/^fp_review_/.test(p.action)) result = _mwPrRoute_(p,actor);
+    if (/^fp_ops_/.test(p.action)) result = _mwOpsRoute_(p,actor);
+    else if (/^fp_review_/.test(p.action)) result = _mwPrRoute_(p,actor);
     else if (p.action === 'fp_funds') result = {status:'ok', funds:_mwFpFunds_()};
     else if (p.action === 'fp_balance') result = getFundBalanceForDashboard(p);
     else if (p.action === 'fp_preview') result = _mwFpPreview_(p, actor);
@@ -49,7 +50,7 @@ function _mwFpNotify_(p,result) {
       'Source: dashboard entry; individual identity was not verified.'];
     if(p.action==='fp_save')lines=lines.concat(['PAYOUTS row: '+result.row,'Fund: '+String(p.fundCode || 'Organization'),
       'Amount: $'+Number(p.amount).toFixed(2),'Receiver: '+String(p.receiver || ''),'Bank reference: '+String(p.reference || '')]);
-    else lines.push('Allocations: '+JSON.stringify(result.allocations || []));
+    else {lines.push('Mode: '+String(p.mode || ''));lines.push('Allocations: '+JSON.stringify(result.allocations || []));if(p.mode==='DISMISS')lines.push('Dismissed PAYMENTS row: '+p.sourceRow,'Reason: '+p.reason);}
     lines.push('This confirms a recorded change. It does not confirm a bank transfer.');
     var sent=sendEmail(cfg.email,'Dashboard change recorded | '+cfg.name,lines.join('\n'),{name:cfg.name,replyTo:cfg.email});
     if(sent===false)throw new Error('Email helper did not confirm sending.');
