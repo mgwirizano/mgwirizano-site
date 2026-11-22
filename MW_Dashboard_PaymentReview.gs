@@ -33,6 +33,7 @@ function _mwPrLedger_(onlyMemberId){
     if(!r.some(function(v){return v!==''&&v!==null;}))return;
     if(typeof r[map.amount]!=='number'||!isFinite(r[map.amount]))return;
     var type=_mwPrText_(r[map.type]),status=_mwPrText_(r[map.status]).toUpperCase(),id=_mwPrId_(r[map.id]),fund=_mwPrCode_(r[map.fund]);
+    if(/^registration fee$/i.test(type))fund='REG';
     var credit=/^funeral credit$/i.test(type),confirmed=['CONFIRMED','DETECTED','NAME-MATCHED','MANUAL ENTRY','VERIFIED','APPROVED','SETTLED'].indexOf(status)>=0;
     var allocated=confirmed&&!!id&&((/^funeral contribution$/i.test(type)&&!!fund)||credit)&&! /GUARD|REVERSAL GUARD/i.test(_mwPrText_(r[map.id])+' '+_mwPrText_(r[map.notes])+' '+_mwPrText_(r[map.memo]));
     var reasons=[];
@@ -48,12 +49,12 @@ function _mwPrLedger_(onlyMemberId){
   });
   return {sheet:sh,data:data,header:header,map:map,rows:rows};
 }
-function _mwPrEmailState_(value){var text=String(value||'').trim();if(!text)return 'NOT RECORDED';if(/^(NOT SENT|NO)\b/i.test(text))return 'NOT SENT';if(/SENDING/i.test(text))return 'SENDING — VERIFY';if(/FAIL|ERROR/i.test(text))return 'FAILED';if(/QUEUED|PENDING/i.test(text))return 'QUEUED';if(/^(YES|SENT)\b/i.test(text))return 'SENT (RECORDED)';return 'VERIFY STATUS';}
+function _mwPrEmailState_(value){var text=String(value||'').trim();if(!text)return 'NOT RECORDED';if(/^NOT APPLICABLE/i.test(text))return 'NOT APPLICABLE';if(/^(NOT SENT|NO)\b/i.test(text))return 'NOT SENT';if(/SENDING|UNCERTAIN/i.test(text))return 'SENDING — VERIFY';if(/FAIL|ERROR/i.test(text))return 'FAILED';if(/QUEUED|PENDING/i.test(text))return 'QUEUED';if(/^(YES|SENT)\b/i.test(text))return 'SENT (RECORDED)';return 'VERIFY STATUS';}
 function _mwPrPublicPayment_(r){var out={};Object.keys(r).forEach(function(k){if(k!=='raw')out[k]=r[k];});return out;}
 function _mwPrFeed_(p){
   var ledger=_mwPrLedger_(),all=ledger.rows.filter(function(r){return !/^registration fee$/i.test(r.type);});
   var query=_mwPrText_(p.query).toLowerCase(),fund=_mwPrText_(p.fundCode);
-  var filtered=all.filter(function(r){return (p.reviewOnly!=='YES'||r.needsReview)&&(!p.statusFilter||r.status===p.statusFilter)&&(!fund||r.fund===fund)&&(!query||[r.memberId,r.name,r.sender,r.memo,r.status].join(' ').toLowerCase().indexOf(query)>=0);});
+  var filtered=all.filter(function(r){return (p.reviewOnly!=='YES'||r.needsReview)&&(!p.statusFilter||r.status===p.statusFilter)&&(!fund||r.fund===fund)&&(!p.month||r.date.slice(0,7)===p.month)&&(!p.day||r.date.slice(0,10)===p.day)&&(p.emailFilter!=='NOT_SENT'||(r.emailState!=='SENT (RECORDED)'&&r.allocated&&r.status!=='SETTLED'))&&(!query||[r.memberId,r.name,r.sender,r.memo,r.status].join(' ').toLowerCase().indexOf(query)>=0);});
   var sorts={date:'timestamp',name:'name',member:'memberId',amount:'amount',fund:'fund',status:'status',email:'emailState'},sort=sorts[p.sortBy]||'timestamp',direction=p.sortDirection==='ASC'?1:-1;
   filtered.sort(function(a,b){var x=a[sort],y=b[sort],v=typeof x==='number'?x-y:String(x||'').localeCompare(String(y||''));return direction*v||b.row-a.row;});
   var exporting=p.action==='fp_review_export';if(exporting&&filtered.length>20000)throw Error('Narrow the search before exporting more than 20,000 records');var offset=exporting?0:Math.max(0,parseInt(p.offset,10)||0),limit=exporting?filtered.length:50;
@@ -82,6 +83,7 @@ function _mwPrObligation_(id,code,ledger){
   var f=matches[0],sh=ss.getSheetByName('TRACK-'+code.slice(-3));if(!sh)return {fundCode:code,status:'REVIEW',balance:null,issues:['TRACK sheet missing']};
   var d=_mwPrValues_(sh),found=[];
   d.slice(7).forEach(function(r,i){if(_mwPrId_(r[0])===id)found.push({raw:r,row:i+8});});
+  if(!found.length){var joined=_mwPrMember_(id).raw[0],opened=f.raw[3];if(joined instanceof Date&&opened instanceof Date&&joined.getTime()>opened.getTime())return {fundCode:code,deceased:_mwPrText_(f.raw[2]),fundStatus:_mwPrText_(f.raw[8]),base:_mwFpMoney_(f.raw[4])/100,lateFee:0,lateFeePending:false,balance:0,recordedBalance:0,paid:0,creditApplied:0,status:'NOT APPLICABLE',trackerStatus:'Member joined after this fund opened',paymentDates:[],deadline:f.raw[9] instanceof Date?Utilities.formatDate(f.raw[9],ss.getSpreadsheetTimeZone(),'yyyy-MM-dd'):'',issues:[]};}
   if(found.length!==1)return {fundCode:code,status:'REVIEW',balance:null,issues:[found.length?'Duplicate tracker rows':'No obligation row; do not assume this member owes this fund']};
   var t=found[0],tr=t.raw,exempt=_mwPrExempt_(id,code,t.raw,f.raw),paidRows=ledger.rows.filter(function(r){return r.memberId===id&&r.fund===code&&r.allocated&&/^funeral contribution$/i.test(r.type);});
   var paid=paidRows.reduce(function(a,r){return a+Math.round(r.amount*100);},0),applied=exempt?0:_mwFpMoney_(tr[3]),recorded=exempt?0:_mwFpMoney_(tr[4]),trackPaid=_mwFpMoney_(tr[5]),base=_mwFpMoney_(f.raw[4]),notes=_mwPrText_(tr[8]),issues=[];
@@ -135,7 +137,7 @@ function _mwPrInput_(p){
   var mode=p.mode;if(['ALLOCATE','CREDIT','DISMISS'].indexOf(mode)<0)throw Error('Invalid action');
   var reason=_mwPrText_(p.reason);if(mode==='DISMISS'&&(reason.length<5||reason.length>500))throw Error('Enter a dismissal reason (5–500 characters)');
   var allocations=mode==='DISMISS'?[]:p.allocations;if(mode!=='DISMISS'&&(!Array.isArray(allocations)||!allocations.length||allocations.length>10))throw Error('Enter 1–10 explicit allocations');
-  allocations=allocations.map(function(a){var amount=String(a.amount||'');if(!/^\d+(\.\d{1,2})?$/.test(amount)||Number(amount)<=0)throw Error('Invalid allocation amount');var memberId=_mwPrId_(a.memberId),code=_mwPrText_(a.fundCode).toUpperCase();if(!memberId||!(/^FUND-\d{3}$/.test(code)||code==='CREDIT'))throw Error('Each allocation needs an exact member and fund (or CREDIT)');return {memberId:memberId,fundCode:code,amount:Number(amount)};});
+  allocations=allocations.map(function(a){var amount=String(a.amount||'');if(!/^\d+(\.\d{1,2})?$/.test(amount)||Number(amount)<=0)throw Error('Invalid allocation amount');var memberId=_mwPrId_(a.memberId),code=_mwPrText_(a.fundCode).toUpperCase();if(!memberId||!(/^FUND-\d{3}$/.test(code)||code==='CREDIT'||code==='REG'))throw Error('Each allocation needs an exact member and fund (or REG / CREDIT)');return {memberId:memberId,fundCode:code,amount:Number(amount)};});
   if(mode==='CREDIT'&&(allocations.length!==1||allocations[0].fundCode==='CREDIT'))throw Error('Apply existing credit to one chosen fund at a time');
   var preparedAt=p.preparedAt||new Date().toISOString();if(isNaN(new Date(preparedAt).getTime()))throw Error('Invalid preview time');
   return {requestId:id,mode:mode,sourceRow:Number(p.sourceRow)||0,allocations:allocations,reason:reason,preparedAt:preparedAt};
@@ -149,6 +151,7 @@ function _mwPrPlan_(input,actor){
     if(!source||!source.canAllocate||source.allocated||/GUARD|SETTLED|REVERSED/i.test(source.rawMemberId+' '+source.status+' '+source.notes))throw Error('Only an unresolved, unallocated payment may be dismissed. Settled guards and confirmed payments are protected.');
     ops.push(_mwPrOp_(ledger.sheet,source.row,map.id+1,[['DISMISSED']]));
     ops.push(_mwPrOp_(ledger.sheet,source.row,map.status+1,[['DISMISSED']]));
+    ops.push(_mwPrOp_(ledger.sheet,source.row,map.email+1,[['NOT APPLICABLE — unresolved source dismissed; member receipts use posted rows']]));
     ops.push(_mwPrOp_(ledger.sheet,source.row,map.notes+1,[[_mwFpSafeText_(source.notes+' | [MWPR '+input.requestId+'] Dismissed '+input.preparedAt+'; original member: '+source.rawMemberId+'; reason: '+input.reason)]]));
     return {requestId:input.requestId,input:input,actor:actor,operations:ops,allocations:[],sourceAmount:source.amount,created:new Date().toISOString()};
   }
@@ -161,7 +164,8 @@ function _mwPrPlan_(input,actor){
   input.allocations.forEach(function(a){
     var member=_mwPrMember_(a.memberId),key=a.memberId+'|'+a.fundCode,cents=Math.round(a.amount*100);
     if(seen[key])throw Error('Duplicate allocation target');seen[key]=true;
-    if(a.fundCode==='CREDIT'){
+    if(a.fundCode==='REG'){if(input.mode!=='ALLOCATE'||typeof _mwActRegistrationAllocation_!=='function')throw Error('Registration allocation requires the dashboard actions module and a verified payment source');var registration=_mwActRegistrationAllocation_(a,member,ledger,date,input);ops=ops.concat(registration.operations);explain.push(registration.detail);
+    }else if(a.fundCode==='CREDIT'){
       if(!memberCredit[a.memberId])memberCredit[a.memberId]={member:member,before:_mwFpMoney_(member.raw[18]),delta:0};
       memberCredit[a.memberId].delta+=cents;explain.push({memberId:a.memberId,fundCode:'CREDIT',amount:a.amount,creditAdded:a.amount});
     }else{
@@ -189,7 +193,7 @@ function _mwPrPlan_(input,actor){
     if(input.mode==='ALLOCATE'){
       var values=Array(ledger.data[ledger.header].length).fill('');
       values[map.date]=date;values[map.id]=a.memberId;values[map.name]=_mwFpSafeText_(_mwPrText_(member.raw[2]));values[map.amount]=a.amount;
-      values[map.type]=a.fundCode==='CREDIT'?'Funeral Credit':'Funeral Contribution';values[map.fund]=a.fundCode;values[map.sender]=_mwFpSafeText_(source.sender);values[map.memo]=_mwFpSafeText_(source.memo);
+      values[map.type]=a.fundCode==='REG'?'Registration Fee':a.fundCode==='CREDIT'?'Funeral Credit':'Funeral Contribution';values[map.fund]=a.fundCode;values[map.sender]=_mwFpSafeText_(source.sender);values[map.memo]=_mwFpSafeText_(source.memo);
       values[map.status]='CONFIRMED';values[map.processed]=new Date(input.preparedAt);values[map.email]='NOT SENT';values[map.notes]='[MWPR '+input.requestId+'] Source PAYMENTS row '+source.row+' | '+actor;
       var detail=explain[explain.length-1];values[map.prev]=a.fundCode==='CREDIT'?'':detail.previousBalance;values[map.balance]=a.fundCode==='CREDIT'?'':detail.newBalance;
       append(ledger.sheet,values);
@@ -198,7 +202,9 @@ function _mwPrPlan_(input,actor){
   Object.keys(memberCredit).forEach(function(id){var v=memberCredit[id];ops.push(_mwPrOp_(v.member.sheet,v.member.row,19,[[(v.before+v.delta)/100]]));});
   Object.keys(fundTotals).forEach(function(code){var t=fundTotals[code],sheet=ss.getSheetByName('FUNDS');if(!sheet.getRange(t.row,8).getFormula())ops.push(_mwPrOp_(sheet,t.row,8,[[(t.before+t.add)/100]]));});
   if(source){
-    ops.push(_mwPrOp_(ledger.sheet,source.row,map.status+1,[['SPLIT-PROCESSED']]));
+    ops.push(_mwPrOp_(ledger.sheet,source.row,map.id+1,[['DISMISSED']]));
+    ops.push(_mwPrOp_(ledger.sheet,source.row,map.status+1,[['DISMISSED']]));
+    ops.push(_mwPrOp_(ledger.sheet,source.row,map.email+1,[['NOT APPLICABLE — unresolved source dismissed; member receipts use posted rows']]));
     ops.push(_mwPrOp_(ledger.sheet,source.row,map.notes+1,[[_mwFpSafeText_(source.notes+' | [MWPR '+input.requestId+'] Allocated to child rows; exclude original from payment totals')]]));
   }
   return {requestId:input.requestId,input:input,actor:actor,operations:ops,allocations:explain,sourceAmount:source?source.amount:0,created:new Date().toISOString()};
@@ -225,7 +231,7 @@ function _mwPrExecute_(plan){
   // Colors are display only; all amounts have already been verified.
   plan.operations.filter(function(o){return /^TRACK-/.test(o.sheet)&&(o.col===4||o.col===8);}).forEach(function(o){var status=String(_mwPrUnpack_(o.after)[0][o.col===8?0:4]);try{ss.getSheetByName(o.sheet).getRange(o.row,8).setFontColor(/^(PAID|COVERED)/.test(status)?'#217B31':'#D68B0C').setBackground(/^(PAID|COVERED)/.test(status)?'#eaf5ed':'#fff8e1');}catch(_) {}});
   var props=PropertiesService.getScriptProperties(),count=Number(props.getProperty('MWPR_PART_COUNT'));props.deleteProperty('MWPR_PENDING');for(var i=0;i<count;i++)props.deleteProperty('MWPR_PART_'+i);props.deleteProperty('MWPR_PART_COUNT');
-  return {status:'ok',requestId:plan.requestId,message:'Approved request completed and audited.',allocations:plan.allocations};
+  var receipts=typeof _mwActAutoReceipts_==='function'?_mwActAutoReceipts_(plan):[];return {status:'ok',requestId:plan.requestId,message:'Approved request completed and audited.'+(typeof _mwActAutoReceipts_!=='function'&&plan.input.mode==='ALLOCATE'?' Member receipts were not sent: install MW_Dashboard_Actions.':'')+(receipts.length?' Member receipt results: '+receipts.map(function(r){return 'row '+r.row+' '+r.status;}).join('; '):''),allocations:plan.allocations,memberReceipts:receipts};
 }
 function _mwPrApply_(p,actor){
   if(p.confirmed!=='YES')throw Error('Preview and confirm first');var lock=LockService.getScriptLock();if(!lock.tryLock(15000))throw Error('Payment operation busy; retry same request');
