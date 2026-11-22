@@ -68,13 +68,19 @@ function _mwFpMoney_(v) {
 function _mwFpFunds_() {
   var sheet = _mwFpSS_().getSheetByName('FUNDS');
   if (!sheet) throw new Error('FUNDS sheet missing');
-  var seen = {};
+  var seen = {}, memberNames = {}, members = _mwFpSS_().getSheetByName('MEMBERS');
+  if (members) members.getDataRange().getValues().forEach(function(r){
+    var id=String(r[16] || '').trim().toUpperCase();
+    if (/^MW\d{4,6}$/.test(id)) memberNames[id]=memberNames[id] === undefined ? String(r[2] || '').trim() : '';
+  });
   return sheet.getDataRange().getValues().filter(function(r){return /^FUND-\d{3}$/.test(String(r[0] || '').trim().toUpperCase());}).map(function(r){
     var code = String(r[0]).trim().toUpperCase();
     if (seen[code]) throw new Error('Duplicate FUNDS code: ' + code);
     seen[code] = true;
     return {code:code, deceased:String(r[2] || ''), status:String(r[8] || ''), baseAmount:_mwFpMoney_(r[4])/100,
-      bereaved:String(r[11] || '').trim().toUpperCase()};
+      bereaved:String(r[11] || '').trim().toUpperCase(),
+      beneficiaryName:memberNames[String(r[11] || '').trim().toUpperCase()] || '',
+      deadline:r[9] instanceof Date && !isNaN(r[9].getTime()) ? Utilities.formatDate(r[9],_mwFpSS_().getSpreadsheetTimeZone(),'yyyy-MM-dd') : String(r[9] || '').trim()};
   });
 }
 function _mwFpFund_(code) {
