@@ -83,3 +83,5 @@ console.log('PASS: read-only standing/emergency/role badges; ongoing versus over
  const bulk=env(),input={task:'BALANCE_REMINDERS',memberIds:['MW0083','MW0100'],requestId:'bulk-statement-123456789'};const pre=bulk.c._mwAdminPlan_(input);assert.equal(pre.details.statements.length,2);assert.equal(bulk.emails(),0);assert.equal(bulk.writes(),0);bulk.c._mwAdminApply_({...input,previewToken:pre.token,confirmed:'YES'});assert.equal(bulk.emails(),2);assert.equal(bulk.data.PAYMENTS.length,13);
  console.log('PASS: MW0030 two independently linked claims returned without a payment-ledger read; no write; missing claims module retains declared family names; complete registration/payment history; full sorted export; selected bulk statements send only after confirmation; deadline-day stays Active and following day displays Closed.');
 }
+
+module.exports={env};
