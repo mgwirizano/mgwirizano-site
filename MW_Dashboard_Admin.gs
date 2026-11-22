@@ -1,0 +1,230 @@
+// Guided administration. Previews are read-only; only explicitly confirmed actions execute.
+var MW_ADMIN_ROLES={MW0001:'Secretary',MW0005:'President',MW0007:'Treasurer',MW0324:'Deputy Treasurer',MW0369:'Deputy Secretary',MW0031:'Deputy President'};
+var MW_ADMIN_BOARD_IDS=['MW0002','MW0058','MW0369','MW0003','MW0004','MW0006','MW0031','MW0258','MW0001','MW0007','MW0005','MW0246','MW0324'];
+function _mwAdminRoute_(p){
+ MWPR_READ_CACHE={};MWPR_SS=null;
+ if(p.action==='fp_admin_overview')return _mwAdminOverview_();
+ if(p.action==='fp_admin_inspect')return _mwAdminInspect_(p);
+ if(p.action==='fp_admin_suggest')return _mwAdminSuggest_(p);
+ if(p.action==='fp_admin_preview'){var plan=_mwAdminPlan_(p);return {status:'ok',previewToken:plan.token,input:plan.input,summary:plan.summary,details:plan.details,message:'Dry run only. No records, memberships or emails changed.'};}
+ if(p.action==='fp_admin_apply')return _mwAdminApply_(p);
+ throw Error('Unknown administration action');
+}
+function _mwAdminProfile_(m,ledger,obligations){
+ var id=m.id,ss=_mwPrSS_(),roleMap={};if(MW_ADMIN_ROLES[id])roleMap.Leadership=MW_ADMIN_ROLES[id];if(MW_ADMIN_BOARD_IDS.indexOf(id)>=0)roleMap.Board='Board Member';
+ var roleSheet=ss.getSheetByName('LEADERSHIP ROSTER');
+ if(roleSheet){var data=roleSheet.getDataRange().getValues(),head=(data[0]||[]).map(_mwPrNormalize_),ic=head.indexOf('memberid'),pc=head.indexOf('position'),bc=head.indexOf('body'),ac=head.indexOf('active');
+  if(ic>=0&&pc>=0)data.slice(1).forEach(function(r){if(_mwPrId_(r[ic])!==id)return;var body=bc>=0?String(r[bc]||'Leadership'):'Leadership';if(ac>=0&&/^(NO|FALSE|INACTIVE)$/i.test(String(r[ac])))delete roleMap[body];else roleMap[body]=String(r[pc]||'');});}
+ var roles=Object.keys(roleMap).map(function(body){return {body:body,position:roleMap[body]};});
+ var today=Utilities.formatDate(new Date(),'America/Los_Angeles','yyyy-MM-dd'),overdue=obligations.filter(function(o){return o.status!=='EXEMPT'&&o.balance>0&&(o.fundStatus==='CLOSED'||(o.deadline&&o.deadline<today));}),ongoing=obligations.filter(function(o){return o.balance>0&&o.fundStatus==='ACTIVE'&&o.deadline&&o.deadline>=today;});
+ var issues=obligations.filter(function(o){return o.status==='REVIEW';}),regRows=ledger.rows.filter(function(r){return r.memberId===id&&/^registration fee$/i.test(r.type)&&['CONFIRMED','DETECTED','NAME-MATCHED','MANUAL ENTRY','VERIFIED','APPROVED'].indexOf(r.status)>=0;});
+ var paid=regRows.reduce(function(a,r){return a+Math.round(r.amount*100);},0)/100,required=Number(getSettings().regFee)||25,regConfirmed=paid>=required,confirmedAt='';
+ var accumulated=0;regRows.slice().sort(function(a,b){return a.timestamp-b.timestamp;}).some(function(r){accumulated+=r.amount;if(accumulated>=required){confirmedAt=r.date;return true;}return false;});
+ var standing=!regConfirmed?'REGISTRATION INCOMPLETE':issues.length?'REVIEW REQUIRED':overdue.length?'ARREARS':'CURRENT';
+ var status=!regConfirmed?'INELIGIBLE':issues.length?'REVIEW REQUIRED':overdue.length>=3?'INELIGIBLE':overdue.length>=2?'AT RISK':overdue.length?'ARREARS — BENEFITS ON HOLD':'ELIGIBLE FINANCIAL STANDING';
+ var members=ss.getSheetByName('MEMBERS'),md=_mwPrValues_(members),header=(md[0]||[]).map(_mwPrNormalize_),enrolCol=header.indexOf('enrollmentwindow'),decCol=header.indexOf('beneficiaryconfirmedat'),restoreCol=header.indexOf('restorationcompletedat');
+ var window=enrolCol>=0?String(m.raw[enrolCol]||'').toUpperCase():'',declared=decCol>=0&&m.raw[decCol] instanceof Date,windowOk=window==='FOUNDING'||(window==='ANNUAL'&&confirmedAt&&new Date().getTime()-(regRows.filter(function(r){return r.date===confirmedAt;})[0]||{}).timestamp>=90*86400000);
+ var restored=restoreCol>=0&&m.raw[restoreCol] instanceof Date;
+ return {emergencyContact:_mwPrText_(m.raw[12]),roles:roles,standing:standing,displayStatus:status,overdueFunds:overdue.length,ongoingUnpaidFunds:ongoing.length,registrationPaid:paid,registrationRequired:required,registrationConfirmedAt:confirmedAt,
+  benefits:!regConfirmed||overdue.length?'ON HOLD':issues.length?'REVIEW REQUIRED':windowOk&&declared?(restored?'ELIGIBLE — restoration recorded':'CURRENT — restoration history needs verification'):'CURRENT — verify declaration / enrollment window',
+  note:'Unpaid ongoing funds within their payment window do not count as overdue arrears. Any overdue arrears hold benefits until cleared. Two current overdue funds show AT RISK; three or more show INELIGIBLE. Founding enrollment is immediate; annual enrollment requires 90 days from confirmed registration payment. Declaration timing, past missed-fund history and restoration must be verified before approving a claim. A loss before payment/declaration confirmation is not covered.'};
+}
+function _mwAdminIds_(p){var ids=p.memberIds||[];if(!Array.isArray(ids)||!ids.length||ids.length>20||ids.some(function(x,i){return !_mwPrId_(x)||ids.indexOf(x)!==i;}))throw Error('Select 1–20 distinct member IDs');return ids;}
+function _mwAdminPeriod_(p){
+ var tz=_mwPrSS_().getSpreadsheetTimeZone(),today=Utilities.formatDate(new Date(),tz,'yyyy-MM-dd'),mode=p.period||'THIS_WEEK',start=today,end=today;
+ function add(day,n){var d=new Date(day+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
+ var monday=add(today,-((new Date(today+'T12:00:00Z').getUTCDay()+6)%7));
+ if(mode==='YESTERDAY')start=end=add(today,-1);else if(mode==='THIS_WEEK')start=monday;else if(mode==='LAST_WEEK'){start=add(monday,-7);end=add(monday,-1);}else if(mode==='THIS_MONTH')start=today.slice(0,8)+'01';else if(mode==='CUSTOM'){start=p.start;end=p.end;}else if(mode!=='TODAY')throw Error('Choose a supported inspection period');
+ [start,end].forEach(function(day){if(!/^\d{4}-\d{2}-\d{2}$/.test(day||'')||isNaN(new Date(day+'T12:00:00Z').getTime())||add(day,0)!==day)throw Error('Valid start/end dates required');});if(start>end||end>today||new Date(end+'T12:00:00Z')-new Date(start+'T12:00:00Z')>93*86400000)throw Error('Use a period up to 94 days ending today or earlier');return {start:start,end:end,tz:tz};
+}
+function _mwAdminSuggest_(p){
+ var ledger=_mwPrLedger_(),source=ledger.rows.filter(function(r){return r.row===Number(p.sourceRow);})[0];if(!source)throw Error('Payment source not found');
+ var memo=source.memo,ids=[],rx=/\bMW[\s#_-]*([O0-9]{1,4})(?!\d)/gi,match,valid={};_mwPrValues_(_mwPrSS_().getSheetByName('MEMBERS')).forEach(function(r){var id=_mwPrId_(r[16]);if(id)valid[id]=true;});
+ while((match=rx.exec(memo))){var id='MW'+String(Number(match[1].replace(/O/gi,'0'))).padStart(4,'0');if(valid[id]&&ids.indexOf(id)<0)ids.push(id);}
+ var funds=_mwFpFunds_(),codes=[],range=memo.match(/fund\s*[-_# ]*0*(\d{1,3})\s*(?:to|through|–|-)\s*(?:fund\s*)?0*(\d{1,3})\b/i);
+ funds.forEach(function(f){var n=Number(f.code.slice(-3)),surname=f.deceased.trim().split(/\s+/).pop(),explicit=new RegExp('\\bfund[\\s_-]*0*'+n+'\\b','i').test(memo);if(explicit||(range&&n>=Number(range[1])&&n<=Number(range[2]))||(surname&&surname.length>=4&&new RegExp('\\b'+surname.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(memo)))codes.push(f.code);});
+ var alternatives=[];if(!ids.length){var bare=memo.match(/\b(?:No\.?|member\s*(?:no\.?|#)?)\s*0*(\d{1,4})\b/i);if(bare){var hint='MW'+String(Number(bare[1])).padStart(4,'0');if(valid[hint])alternatives.push(hint);}}
+ var hints=_mwAdminMemoHints_(memo);codes=hints.explicitFundCodes.length?hints.explicitFundCodes:hints.nameReferences.reduce(function(a,g){return a.concat(g.funds);},[]);
+ return {status:'ok',memberIds:ids,possibleMemberIds:alternatives,fundCodes:codes,ambiguous:hints.ambiguous,creditMention:hints.creditMention,message:'Suggestions only. Verify the member, fund and each dollar amount; no automatic equal split or credit.'+(hints.ambiguous?' A surname matches multiple funds; these are alternatives, not a requirement to pay all of them.':'')};
+}
+function _mwAdminInput_(p){
+ var input={requestId:String(p.requestId||''),task:String(p.task||''),memberIds:p.memberIds||[],fundCode:String(p.fundCode||''),reason:String(p.reason||''),boardReference:String(p.boardReference||''),caseReviewed:p.caseReviewed==='YES',deceased:String(p.deceased||'').trim(),relationship:String(p.relationship||''),deadline:String(p.deadline||''),amount:String(p.amount||''),evidence:String(p.evidence||''),position:String(p.position||'Board Member').trim()};
+ if(!/^[A-Za-z0-9-]{16,80}$/.test(input.requestId))throw Error('Action request ID missing');
+ return input;
+}
+function _mwAdminPlan_(p){
+ MWPR_READ_CACHE={};
+ var input=_mwAdminInput_(p);
+ var ss=_mwPrSS_(),details={},summary='',snapshot={};
+ if(input.task==='CLEANUP'){
+  var members=_mwPrValues_(ss.getSheetByName('MEMBERS')),active={};members.forEach(function(r){var id=_mwPrId_(r[16]);if(id)active[id]=true;});var removed={},skipped=[];
+  ['REMOVED_MEMBERS','REMOVED MEMBERS ARCHIVE'].forEach(function(name){var sh=ss.getSheetByName(name);if(!sh)return;var data=sh.getDataRange().getValues(),h=(data[0]||[]).map(_mwPrNormalize_),ic=h.indexOf('memberid'),dc=h.indexOf('removedat');if(ic<0||dc<0)throw Error(name+' needs Member ID and Removed At headers');data.slice(1).forEach(function(r){var id=_mwPrId_(r[ic]);if(!id||!r[dc]||isNaN(new Date(r[dc]).getTime()))return;if(active[id]){skipped.push(id);return;}removed[id]=true;});});
+  if(!Object.keys(removed).length)throw Error('No dated removals absent from MEMBERS were found');
+  var targets=[],held=[];ss.getSheets().forEach(function(sh){if(!/^TRACK-\d+$/i.test(sh.getName()))return;var data=sh.getDataRange().getValues(),formulas=sh.getDataRange().getFormulas();data.slice(7).forEach(function(r,i){var id=_mwPrId_(r[0]);if(!removed[id])return;if(Number(r[3])>0||Number(r[5])>0||/PAID|COVERED/i.test(String(r[7]))){held.push({memberId:id,sheet:sh.getName(),reason:'Retain historical paid/applied-credit row; removing it can change fund report totals'});return;}targets.push({sheet:sh.getName(),row:i+8,memberId:id,values:_mwPrPack_(r),formulas:formulas[i+7]});});});
+  details={targets:targets,held:held,retainedStillMembers:skipped};summary='Archive and remove '+targets.length+' confirmed-removed unpaid TRACK rows. Paid/credit history, PAYMENTS, MEMBERS and removal records stay intact.';snapshot=details;
+ }else if(input.task==='STATEMENT'){
+  var ids=_mwAdminIds_(input);if(ids.length!==1)throw Error('Select one member. Family members receive separate private statements.');
+  details={statement:_mwAdminStatement_(ids[0])};summary='Send one balance and owing-history statement to '+details.statement.email+'. No balances, fees or allocations change.';snapshot={memberId:ids[0],profile:_mwPrProfile_(ids[0])};
+ }else if(input.task==='REMINDERS'){
+  if(typeof _crBuildMemberEmail_!=='function'||typeof _crBuildPlainText_!=='function')throw Error('Install your supplied consolidated reminder script first');
+  var ids=_mwAdminIds_(input),ledger=_mwPrLedger_(),funds=_mwFpFunds_(),cfg=getSettings(),today=Utilities.formatDate(new Date(),ss.getSpreadsheetTimeZone(),'yyyy-MM-dd'),prior=ss.getSheetByName('REMINDER LOG'),sent={};
+  if(prior)prior.getDataRange().getValues().slice(1).forEach(function(r){if(r[0] instanceof Date&&Utilities.formatDate(r[0],ss.getSpreadsheetTimeZone(),'yyyy-MM-dd')===today)sent[r[2]]=true;});
+  var messages=ids.map(function(id){if(sent[id])throw Error(id+' has a reminder log entry today; inspect before resending');var m=_mwPrMember_(id),items=[];funds.forEach(function(f){var o=_mwPrObligation_(id,f.code,ledger);if(o.status==='REVIEW')throw Error(id+' '+f.code+': '+o.issues.join('; '));if(o.status!=='EXEMPT'&&o.balance>0)items.push({fund:f.code,fundName:f.code+' — '+f.deceased,deceased:f.deceased,deadline:o.deadline,contributionDue:Math.max(0,o.balance-o.lateFee),lateFee:o.lateFee,totalDue:o.balance,memo:id+' '+f.code});});if(!items.length)throw Error(id+' has no outstanding funds');var g={id:id,name:_mwPrText_(m.raw[2]),email:_mwPrText_(m.raw[1]),items:items,totalDue:items.reduce(function(a,x){return Math.round((a+x.totalDue)*100)/100;},0)};if(!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(g.email))throw Error(id+' email is invalid');cfg.reminderAdminEmail=cfg.leaderEmail;return {group:g,subject:'Outstanding Contributions — '+id+' | $'+g.totalDue.toFixed(2),text:_crBuildPlainText_(cfg,g),html:_crBuildMemberEmail_(cfg,g)};});details={messages:messages};summary='Send '+messages.length+' consolidated reminders, one email per selected member. No payment records change.';snapshot=details;
+ }else if(input.task==='LATE_APPLY'||input.task==='LATE_REVERSE'){
+  var fund=_mwFpFund_(input.fundCode),track=ss.getSheetByName('TRACK-'+fund.code.slice(-3)),ledger=_mwPrLedger_(),ids=_mwAdminIds_(input),operations=[];
+  if(input.reason.trim().length<5)throw Error('Enter a reason for this fee action');
+  ids.forEach(function(id){var o=_mwPrObligation_(id,fund.code,ledger);if(o.status==='EXEMPT'||o.status==='REVIEW')throw Error(id+': '+o.status+' '+o.issues.join('; '));var t=o._track,raw=t.raw,before=_mwFpMoney_(raw[4])/100,note=String(raw[8]||''),status=String(raw[7]||''),after;
+   if(input.task==='LATE_APPLY'){if(!o.lateFeePending||before<=0)throw Error(id+': no unapplied late fee due');after=before+5;status='LATE — $'+after.toFixed(2)+' (includes $5 late fee)';note+=' | [LF_AUTO_APPLIED:'+fund.code+'] Late fee of $5 applied; '+input.reason+'; request '+input.requestId;}
+   else{if((!/^LATE\b/i.test(status)&&!/late fee[^|]*applied|LF_AUTO_APPLIED/i.test(note))||o.lateFeePending||o.lateFee!==5||before<5||/LATE_FEE_REVERSED|late fee (?:waived|reversed)/i.test(note))throw Error(id+': no verified unpaid fee to reverse');after=before-5;status=after?'PENDING — $'+after.toFixed(2):'COVERED BY CREDIT';note+=' | [LATE_FEE_REVERSED_CREDIT:'+fund.code+'] $5 wrongly applied late fee reversed; '+input.reason+'; request '+input.requestId;}
+   operations.push(_mwPrOp_(track,t.row,5,[[after]]),_mwPrOp_(track,t.row,8,[[status,note]]));
+  });details={operations:operations,memberIds:ids,fundCode:fund.code};summary=(input.task==='LATE_APPLY'?'Apply':'Reverse')+' $5 late fee for '+ids.length+' selected members. Fund payments and stored credit do not change.';snapshot=details;
+ }else if(input.task==='BOARD_BADGES'){
+  var ids=_mwAdminIds_(input);if(!input.position||input.position.length>100)throw Error('Enter a Board position');details={members:ids.map(function(id){var m=_mwPrMember_(id);return {memberId:id,name:String(m.raw[2])};}),position:input.position};var roster=ss.getSheetByName('LEADERSHIP ROSTER');snapshot={details:details,roster:roster?roster.getDataRange().getValues():[]};summary='Record confirmed Board badges for '+ids.length+' selected members. This does not grant financial access or funeral-contribution exemptions.';
+ }else if(input.task==='SLIDES'){
+  if(typeof generateFundSlides!=='function')throw Error('Install your supplied fund slides script');details={funds:_mwFpFunds_().filter(function(f){return f.status==='ACTIVE';})};if(!details.funds.length)throw Error('No active funds for the slides');summary='Generate the existing meeting slides deck for '+details.funds.length+' active funds and email its link to leadership. No fund balances change.';snapshot={funds:_mwPrValues_(ss.getSheetByName('FUNDS'))};
+ }else if(input.task==='REMOVE'){
+  var ids=_mwAdminIds_(input),review=_mwOpsReviewIndex_();if(!input.caseReviewed||input.boardReference.trim().length<5)throw Error('Record Board approval and confirm the member had an opportunity to present their case');if(typeof _mwNoticeDeadlinePassed_!=='function'||typeof _mwNoticedBalance_!=='function')throw Error('Install your supplied membership removal script');
+  details={members:ids.map(function(id){var r=review[id];if(!r||r.decision!=='PROCEED'||r.sendStatus!=='SENT'||!(r.values[11] instanceof Date)||!_mwNoticeDeadlinePassed_(r.values[7],new Date(),ss.getSpreadsheetTimeZone()))throw Error(id+': approved sent notice and passed deadline required');var codes=String(r.values[5]).match(/FUND-\d{3}/g)||[],balance=_mwNoticedBalance_(ss,id,codes),m=_mwPrMember_(id);if(!codes.length||balance.total<=0)throw Error(id+': no verified notified arrears remain');return {memberId:id,name:String(m.raw[2]),email:String(m.raw[1]),row:m.row,original:_mwPrPack_(m.raw),reviewRow:r.row,review:r.values,balance:balance};}),boardReference:input.boardReference};summary='Archive then remove '+ids.length+' selected MEMBERS rows after Board-approved review and notify those members. PAYMENTS and TRACK are not deleted. A 30-day appeal contact is included.';snapshot=details;
+ }else if(input.task==='OPEN_FUND'){
+  var id=_mwAdminIds_(input);if(id.length!==1)throw Error('Choose one claimant; shared-loss cases require separate review');var m=_mwPrMember_(id[0]),relation=_mwClaimRelation_(input.relationship),claims=_mwClaimProfile_(m.id,{father:String(m.raw[7]||''),mother:String(m.raw[8]||''),spouse:String(m.raw[9]||''),children:String(m.raw[10]||''),siblings:String(m.raw[11]||'')});
+  if(!relation||!input.caseReviewed||input.boardReference.trim().length<5||input.evidence.trim().length<5)throw Error('Confirm Welfare/Board verification and record evidence that declaration/payment preceded the loss');
+  var listed=relation==='self'?_mwClaimName_(m.raw[2])===_mwClaimName_(input.deceased):_mwClaimNames_(({father:m.raw[7],mother:m.raw[8],spouse:m.raw[9],children:m.raw[10],siblings:m.raw[11]})[relation]).some(function(n){return _mwClaimName_(n)===_mwClaimName_(input.deceased);});if(!listed)throw Error('Deceased must match a declared beneficiary exactly');
+  var same=ss.getSheetByName('FUNDS').getDataRange().getValues().filter(function(r){return /^FUND-\d{3}$/.test(String(r[0]))&&_mwClaimName_(r[2])===_mwClaimName_(input.deceased)&&! /CANCELLED|REJECTED/i.test(String(r[8]));});if(same.length)throw Error('Previous or possible claim exists: '+same.map(function(r){return r[0];}).join(', ')+'. Verify identity; no second fund opened.');
+  var maxCode=_mwFpFunds_().reduce(function(n,f){return Math.max(n,Number(f.code.slice(-3)));},0);if(maxCode>=999)throw Error('Fund numbering needs review');var proposedCode='FUND-'+String(maxCode+1).padStart(3,'0');if(_mwFpFunds_().some(function(f){return f.code===proposedCode;})||ss.getSheetByName('TRACK-'+proposedCode.slice(-3))||ss.getSheetByName(proposedCode))throw Error('Next fund number conflicts with existing records; review numbering first');
+  var profile=_mwPrProfile_(m.id);var standing=_mwAdminProfile_(m,_mwPrLedger_(),profile.obligations);if(standing.registrationPaid<standing.registrationRequired)throw Error('Registration payment is not verified in full');if(profile.obligations.some(function(o){return o.status==='REVIEW'||(o.balance>0&&(o.fundStatus==='CLOSED'||(o.deadline&&o.deadline<Utilities.formatDate(new Date(),'America/Los_Angeles','yyyy-MM-dd'))));}))throw Error('Claimant has overdue or unresolved obligations');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(input.deadline)||isNaN(new Date(input.deadline+'T12:00:00Z').getTime())||new Date(input.deadline+'T12:00:00Z').toISOString().slice(0,10)!==input.deadline||input.deadline<Utilities.formatDate(new Date(),'America/Los_Angeles','yyyy-MM-dd'))throw Error('Choose a valid future deadline');var amount=Number(input.amount);if(amount!==(relation==='self'?25:10))throw Error('Use the constitutional $10 standard or $25 member-death contribution; shared losses require separate review');
+  var currentDay=Utilities.formatDate(new Date(),ss.getSpreadsheetTimeZone(),'yyyy-MM-dd'),lastDay=new Date(currentDay+'T12:00:00Z');lastDay.setUTCDate(lastDay.getUTCDate()+14);if(input.deadline!==lastDay.toISOString().slice(0,10))throw Error('Use the 14-calendar-day contribution deadline: '+lastDay.toISOString().slice(0,10));
+  var md=ss.getSheetByName('MEMBERS').getDataRange().getValues(),exemptData=ss.getSheetByName('EXEMPTIONS')?ss.getSheetByName('EXEMPTIONS').getDataRange().getValues():[],exempt={};(MW_FP.leaderIds||[]).concat([m.id]).forEach(function(x){exempt[x]=true;});
+  exemptData.forEach(function(r){if(String(r[0]).toUpperCase()==='ALL'&&_mwPrId_(r[1])&&String(r[5]).toUpperCase()==='YES')exempt[_mwPrId_(r[1])]=true;});
+  var seen={},credit=[],tracks=[],exemptions=[];md.slice(1).forEach(function(r,i){var memberId=_mwPrId_(r[16]);if(!memberId)return;if(seen[memberId])throw Error('Duplicate member ID '+memberId);seen[memberId]=true;var isExempt=!!exempt[memberId];if(!isExempt&&String(r[19]).toUpperCase()!=='YES')return;var before=r[18]===''||r[18]==null?0:r[18];if(typeof before!=='number'||!isFinite(before)||before<0)throw Error(memberId+': invalid credit balance');var used=isExempt?0:Math.min(before,amount),after=Math.round((before-used)*100)/100,owed=Math.round((amount-used)*100)/100;
+   tracks.push([memberId,String(r[2]||''),isExempt?'N/A':amount,isExempt?'N/A':used,isExempt?'N/A':owed,'','',isExempt?'EXEMPT':owed?'PENDING':'COVERED BY CREDIT','Opened via dashboard request '+input.requestId]);
+   if(used)credit.push({memberId:memberId,row:i+2,before:before,amount:used,after:after});if(isExempt)exemptions.push([proposedCode,memberId,String(r[2]||''),memberId===m.id?'Bereaved — '+input.relationship:'Recorded contribution exemption','NO','YES']);
+  });if(!tracks.length)throw Error('No eligible tracker members');
+  details={fundCode:proposedCode,claimant:id[0],claimantName:String(m.raw[2]),deceased:input.deceased,relationship:input.relationship,amount:amount,deadline:input.deadline,creditEffects:credit,trackRows:tracks,exemptions:exemptions,boardReference:input.boardReference,evidence:input.evidence};summary='Open '+proposedCode+' with '+tracks.length+' tracker rows, '+exemptions.length+' exempt members and '+credit.length+' disclosed stored-credit applications. All six officers remain exempt; Board membership alone does not grant exemption. Leadership receives the announcement. No bulk emails or cash PAYMENTS entries.';snapshot={details:details,members:md,funds:ss.getSheetByName('FUNDS').getDataRange().getValues(),exemptions:exemptData};
+ }else throw Error('Choose an administrative task');
+ return {input:input,summary:summary,details:details,token:_mwFpHash_({input:input,snapshot:_mwPrPack_(snapshot)})};
+}
+function _mwAdminAudit_(){var ss=_mwPrSS_(),sh=ss.getSheetByName('MW_ADMIN_ACTIONS');if(!sh){sh=ss.insertSheet('MW_ADMIN_ACTIONS');sh.getRange(1,1,1,7).setValues([['Request ID','Task','Input Hash','Status','Started At','Completed At','Result']]);}return sh;}
+function _mwAdminEmail_(to,subject,text,html){try{var cfg=getSettings(),ok=sendEmail(to,subject,text,{htmlBody:html||'',name:cfg.groupName,replyTo:cfg.leaderEmail});return {status:ok?'SENT':'UNCERTAIN',recipient:to};}catch(err){return {status:'UNCERTAIN',recipient:to,error:err.message};}}
+function _mwAdminApply_(p){
+ if(p.confirmed!=='YES')throw Error('Preview and confirm this task first');var lock=LockService.getScriptLock();if(!lock.tryLock(20000))throw Error('Another administrative action is running');
+ var audit,row;
+ try{
+  var ss=_mwPrSS_(),existing=ss.getSheetByName('MW_ADMIN_ACTIONS'),old=existing?existing.getDataRange().getValues().filter(function(r){return r[0]===p.requestId;}):[];
+  if(old.length){if(old.length!==1)throw Error('Duplicate admin audit IDs require review');if(old[0][2]!==_mwFpHash_(_mwAdminInput_(p)))throw Error('Request ID belongs to different details; inspect its audit');if(old[0][3]==='COMPLETE')return {status:'ok',alreadyRecorded:true,message:'Already completed. No repeat changes.',result:JSON.parse(old[0][6]||'{}')};throw Error('Earlier action has an uncertain/interrupted outcome. Inspect MW_ADMIN_ACTIONS before retrying.');}
+  if(PropertiesService.getScriptProperties().getProperty('MWPR_PENDING'))throw Error('Resume the existing approved financial action first');
+  var plan=_mwAdminPlan_(p);if(!p.previewToken||p.previewToken!==plan.token)throw Error('Source records changed since dry run. Preview again.');
+  audit=_mwAdminAudit_();row=audit.getLastRow()+1;audit.getRange(row,1,1,7).setValues([[plan.input.requestId,plan.input.task,_mwFpHash_(plan.input),'STARTED',new Date(),'','']]);SpreadsheetApp.flush();
+  var result={},task=plan.input.task;
+  if(task==='CLEANUP'){
+   var targets=plan.details.targets,archive=ss.getSheetByName('REMOVED FUND ROWS ARCHIVE');if(targets.length&&!archive){archive=ss.insertSheet('REMOVED FUND ROWS ARCHIVE');archive.getRange(1,1,1,5).setValues([['Archived At','Member ID','TRACK Sheet','Original Row','Original TRACK Row JSON']]);}
+   if(targets.length){var snapshots=targets.map(function(t){return [new Date(),t.memberId,t.sheet,t.row,JSON.stringify({requestId:plan.input.requestId,values:t.values,formulas:t.formulas})];}),start=archive.getLastRow()+1;archive.getRange(start,1,snapshots.length,5).setValues(snapshots);SpreadsheetApp.flush();var saved=archive.getRange(start,1,snapshots.length,5).getValues();snapshots.forEach(function(r,i){if(saved[i][4]!==r[4])throw Error('Archive verification failed. No row deletion started');});
+    targets.slice().sort(function(a,b){return a.sheet.localeCompare(b.sheet)||b.row-a.row;}).forEach(function(t){var sh=ss.getSheetByName(t.sheet),fresh=sh.getRange(t.row,1,1,t.values.length);if(_mwFpHash_(_mwPrPack_(fresh.getValues()[0]))!==_mwFpHash_(t.values)||_mwFpHash_(fresh.getFormulas()[0])!==_mwFpHash_(t.formulas))throw Error('TRACK row changed; cleanup stopped');sh.deleteRow(t.row);});}
+   result={removedTrackRows:targets.length,heldHistoricalRows:plan.details.held.length};
+  }else if(task==='STATEMENT'){
+   var statement=plan.details.statement;result={memberId:statement.memberId,generatedAt:statement.generatedAt,email:_mwAdminEmail_(statement.email,statement.subject,statement.text)};
+  }else if(task==='REMINDERS'){
+   var log=ss.getSheetByName('REMINDER LOG');if(!log){log=ss.insertSheet('REMINDER LOG');log.getRange(1,1,1,14).setValues([['Sent At','Run ID','Member ID','Member Name','Email','Fund','Fund Name','Deceased','Contribution Due','Late Fee','Fund Total Due','Email Total Due','Subject','Status']]);}
+   result={emails:[]};plan.details.messages.forEach(function(m){var g=m.group,first=log.getLastRow()+1,logs=g.items.map(function(x){return [new Date(),plan.input.requestId,g.id,g.name,g.email,x.fund,x.fundName,x.deceased,x.contributionDue,x.lateFee,x.totalDue,g.totalDue,m.subject,'SENDING'];});log.getRange(first,1,logs.length,14).setValues(logs);SpreadsheetApp.flush();var mail=_mwAdminEmail_(g.email,m.subject,m.text,m.html);log.getRange(first,14,logs.length,1).setValues(logs.map(function(){return [mail.status==='SENT'?'ACCEPTED FOR DELIVERY':'UNCERTAIN'];}));result.emails.push({memberId:g.id,status:mail.status});});
+  }else if(task==='LATE_APPLY'||task==='LATE_REVERSE'){
+   plan.input.mode=task;var financial={requestId:plan.input.requestId,input:plan.input,actor:'Dashboard admin',operations:plan.details.operations,allocations:[],created:new Date().toISOString()};_mwPrStore_(financial);_mwPrExecute_(financial);
+   result={members:plan.details.memberIds,fundCode:plan.details.fundCode,notifications:[]};plan.details.memberIds.forEach(function(id){var m=_mwPrMember_(id);result.notifications.push(_mwAdminEmail_(String(m.raw[1]),(task==='LATE_APPLY'?'Late fee applied':'Late fee reversed')+' | '+id+' | '+plan.details.fundCode,'Member ID: '+id+'\nFund: '+plan.details.fundCode+'\n'+(task==='LATE_APPLY'?'A $5 late fee was added.':'An unpaid $5 late fee was reversed.')+'\nReason: '+plan.input.reason+'\nCheck your member portal for the updated outstanding balance.'));});
+  }else if(task==='BOARD_BADGES'){
+   var roster=ss.getSheetByName('LEADERSHIP ROSTER');if(!roster){roster=ss.insertSheet('LEADERSHIP ROSTER');roster.getRange(1,1,1,4).setValues([['Member ID','Position','Body','Active']]);}var data=roster.getDataRange().getValues();if(['Member ID','Position','Body','Active'].some(function(h,i){return data[0][i]!==h;}))throw Error('Roster header mismatch');plan.details.members.forEach(function(m){var at=roster.getDataRange().getValues().findIndex(function(r){return r[0]===m.memberId&&r[2]==='Board';});roster.getRange(at>=1?at+1:roster.getLastRow()+1,1,1,4).setValues([[m.memberId,plan.input.position,'Board','YES']]);});result={members:plan.details.members,position:plan.input.position};
+  }else if(task==='SLIDES'){
+   var slides=generateFundSlides();result={message:'Existing slides generator completed; its leadership email contains the Google Slides link.',data:slides||null};
+  }else if(task==='REMOVE'){
+   var archive=ss.getSheetByName('REMOVED MEMBERS ARCHIVE');if(!archive){archive=ss.insertSheet('REMOVED MEMBERS ARCHIVE');archive.getRange(1,1,1,9).setValues([['Member ID','Member Name','Email','Notice Deadline','Outstanding At Removal','Original MEMBERS Row JSON','Email Status','Removed At','Notice Sent At']]);}
+   result={members:[]};plan.details.members.forEach(function(m){var ar=archive.getLastRow()+1;archive.getRange(ar,1,1,9).setValues([[m.memberId,m.name,m.email,m.review[7],m.balance.total,JSON.stringify(_mwPrUnpack_(m.original)),'SENDING','',m.review[11]]]);SpreadsheetApp.flush();
+    if(String(archive.getRange(ar,6).getValue())!==JSON.stringify(_mwPrUnpack_(m.original)))throw Error('Member archive verification failed');
+    var mail=_mwAdminEmail_(m.email,'Membership removal | '+m.memberId,'Dear '+m.name+',\n\nThe final notice deadline '+m.review[7]+' has passed and $'+m.balance.total.toFixed(2)+' remains outstanding. Following Board review, your membership is being removed. You may present payment proof or appeal within 30 days by contacting '+getSettings().leaderEmail+'.\n\n'+getSettings().groupName);
+    if(mail.status!=='SENT'){archive.getRange(ar,7).setValue('UNCERTAIN');throw Error('Member email delivery uncertain; member retained. Inspect archive and sent mail.');}
+    archive.getRange(ar,7).setValue('SENT');var sheet=ss.getSheetByName('MEMBERS'),rows=sheet.getDataRange().getValues(),positions=[];rows.forEach(function(r,i){if(_mwPrId_(r[16])===m.memberId)positions.push(i+1);});if(positions.length!==1||_mwFpHash_(_mwPrPack_(rows[positions[0]-1]))!==_mwFpHash_(m.original))throw Error('MEMBERS row changed; deletion blocked');
+    sheet.deleteRow(positions[0]);archive.getRange(ar,8).setValue(new Date());ss.getSheetByName('REMOVAL REVIEW').getRange(m.reviewRow,11).setValue('REMOVED');result.members.push({memberId:m.memberId,status:'REMOVED',whatsApp:'Remove manually'});
+   });
+  }else if(task==='OPEN_FUND'){
+   result=_mwAdminOpenFund_(plan);
+
+  }
+  audit.getRange(row,4).setValue('COMPLETE');audit.getRange(row,6,1,2).setValues([[new Date(),JSON.stringify(result)]]);return {status:'ok',message:'Confirmed task completed. Review the results below.',result:result};
+ }catch(err){if(audit&&row){try{audit.getRange(row,4).setValue('REVIEW REQUIRED');audit.getRange(row,7).setValue(String(err.message));}catch(_) {}}throw err;}finally{lock.releaseLock();}
+}
+// Audit suggestions never produce executable posting code.
+function _mwAdminMemoHints_(memo){
+ var funds=_mwFpFunds_(),known={},ids=[],explicit=[],groups=[],match;funds.forEach(function(f){known[f.code]=true;});
+ var rx=/\bMW[\s#_-]*([O0-9]{1,4})(?!\d)/gi;while((match=rx.exec(memo))){var id='MW'+String(Number(match[1].replace(/O/gi,'0'))).padStart(4,'0');if(ids.indexOf(id)<0)ids.push(id);}
+ var block=/\bfunds?[\s_#:-]*((?:0*\d{1,3})(?:\s*(?:,|&|\band\b|\bto\b|\bthrough\b|-)\s*(?:fund[\s_-]*)?0*\d{1,3})*)/gi;
+ while((match=block.exec(memo))){var numbers=match[1].match(/\d+/g).map(Number);if(/\bto\b|\bthrough\b/.test(match[1])&&numbers.length===2){for(var n=numbers[0];n<=numbers[1]&&n<=999;n++){var code='FUND-'+String(n).padStart(3,'0');if(known[code]&&explicit.indexOf(code)<0)explicit.push(code);}}else numbers.forEach(function(n){var code='FUND-'+String(n).padStart(3,'0');if(known[code]&&explicit.indexOf(code)<0)explicit.push(code);});}
+ if(!explicit.length){var bySurname={};funds.forEach(function(f){var surname=f.deceased.trim().split(/\s+/).pop();if(!surname||surname.length<4)return;var key=surname.toLowerCase();if(new RegExp('\\b'+surname.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(memo))(bySurname[key]||(bySurname[key]=[])).push(f.code);});Object.keys(bySurname).forEach(function(name){groups.push({name:name,funds:bySurname[name],ambiguous:bySurname[name].length>1});});}
+ return {memberIds:ids,explicitFundCodes:explicit,nameReferences:groups,ambiguous:groups.some(function(g){return g.ambiguous;}),creditMention:/future|credit|advance/i.test(memo)};
+}
+function _mwAdminInspect_(p){
+ var queue=_mwOpsMailQueue_(p),ledger=_mwPrLedger_(),ss=_mwPrSS_(),stats={recorded:0,missing:0,review:0},items=queue.messages.map(function(m){
+  if(m.error){stats.review++;m.auditStatus='REVIEW';m.finding=m.error;return m;}
+  var msg=GmailApp.getMessageById(m.messageId),date=msg.getDate(),hints=_mwAdminMemoHints_(m.memo),sender=m.sender.toUpperCase().replace(/[^A-Z0-9]/g,''),finger=function(v){return String(v||'').replace(/\((?:split|balance allocation|recovery source)[^)]*\)/ig,'').replace(/[^a-z0-9]/ig,'').toUpperCase();};
+  var candidates=ledger.rows.filter(function(r){return m.check.exactRows.indexOf(r.row)>=0||r.sender.toUpperCase().replace(/[^A-Z0-9]/g,'')===sender&&r.raw[ledger.map.date] instanceof Date&&Utilities.formatDate(r.raw[ledger.map.date],ss.getSpreadsheetTimeZone(),'yyyy-MM-dd')===Utilities.formatDate(date,ss.getSpreadsheetTimeZone(),'yyyy-MM-dd')&&(m.check.exactRows.indexOf(r.row)>=0||Math.abs(r.timestamp-date.getTime())<=120000||(finger(m.memo)&&finger(r.memo)===finger(m.memo)));});
+  var posted=candidates.filter(function(r){return r.allocated;}),total=posted.reduce(function(a,r){return a+Math.round(r.amount*100);},0)/100,issues=[];
+  if(hints.ambiguous)issues.push('Surname matches more than one fund: '+hints.nameReferences.filter(function(g){return g.ambiguous;}).map(function(g){return g.name+' ['+g.funds.join(' or ')+']';}).join('; ')+'. These are alternatives, not an instruction to pay every matching fund.');
+  var badIds=posted.filter(function(r){return hints.memberIds.length&&hints.memberIds.indexOf(r.memberId)<0;});if(badIds.length)issues.push('Recorded member does not match the explicit MW ID in the memo. Inspect the source; fund numbers are not member IDs.');
+  if(hints.explicitFundCodes.length&&posted.some(function(r){return hints.explicitFundCodes.indexOf(r.fund)<0;}))issues.push('Recorded fund differs from explicit fund code(s).');
+  if(total>m.amount+.005)issues.push('Possible duplicate: source $'+m.amount.toFixed(2)+' but candidate posted rows total $'+total.toFixed(2)+'. Verify bank transaction references before reversing anything.');
+  else if(posted.length&&Math.abs(total-m.amount)>.005)issues.push('Candidate recorded amounts do not equal this bank source. Do not append the full amount again.');
+  var status=!posted.length?'MISSING / REVIEW':issues.length?'REVIEW':'RECORDED CANDIDATES';if(status==='MISSING / REVIEW'){stats.missing++;issues.push('No posted source allocation verified. Inspect existing review rows before staging another source.');}else if(status==='REVIEW')stats.review++;else stats.recorded++;
+  return Object.assign(m,{auditStatus:status,hints:hints,candidateRows:candidates.map(_mwPrPublicPayment_),postedTotal:total,finding:issues.join(' ')||'Candidate totals match. Confirm the intended member and fund against the bank source; this is a read-only finding.'});
+ });return {status:'ok',items:items,stats:stats,period:queue.period,nextOffset:queue.nextOffset,offset:queue.offset,message:'Read-only inspection. Counts cover this page of conversations. No code is generated, no corrections run, and no labels are changed.'};
+}
+function _mwAdminLog_(action,requestId,result,task){
+ var ss=_mwPrSS_(),sh=ss.getSheetByName('MW_DASHBOARD_ACTIVITY');if(!sh){sh=ss.insertSheet('MW_DASHBOARD_ACTIVITY');sh.getRange(1,1,1,6).setValues([['Timestamp','Origin','Action','Outcome','Request ID','Summary']]);}
+ var origin=/fp_review_/.test(action)?'Dashboard / Payment review':/fp_ops_stage/.test(action)?'Dashboard / Zelle import':/notice/.test(action)?'Dashboard / Notices':task==='STATEMENT'?'Dashboard / Member profile':/fp_admin_/.test(action)?'Dashboard / Administration':'Dashboard / Payouts';
+ sh.getRange(sh.getLastRow()+1,1,1,6).setValues([[new Date(),origin,task?task:action,/UNCERTAIN|FAILED/i.test(JSON.stringify(result.result||result.results||result.notification||{}))?'COMPLETED / NEEDS REVIEW':'COMPLETED',String(requestId||''),String(result.message||'Completed').slice(0,500)]]);
+}
+function _mwAdminOverview_(){
+ var ss=_mwPrSS_(),ledger=_mwPrLedger_(),members=_mwPrValues_(ss.getSheetByName('MEMBERS')).filter(function(r){return !!_mwPrId_(r[16]);}),ids={},credits=0;members.forEach(function(r){ids[_mwPrId_(r[16])]=true;if(typeof r[18]==='number')credits+=Math.round(r[18]*100);});
+ var days={},tz=ss.getSpreadsheetTimeZone(),today=Utilities.formatDate(new Date(),tz,'yyyy-MM-dd');for(var i=6;i>=0;i--){var day=new Date(today+'T12:00:00Z');day.setUTCDate(day.getUTCDate()-i);days[day.toISOString().slice(0,10)]=0;}
+ var byFund={},cash=0,sent=0,notSent=0;ledger.rows.forEach(function(r){if(!r.allocated||!/^funeral contribution$/i.test(r.type))return;var cents=Math.round(r.amount*100);cash+=cents;byFund[r.fund]=(byFund[r.fund]||0)+cents;var day=r.raw[ledger.map.date] instanceof Date?Utilities.formatDate(r.raw[ledger.map.date],tz,'yyyy-MM-dd'):'';if(days[day]!==undefined)days[day]+=cents;if(r.emailState==='SENT (RECORDED)')sent++;else notSent++;});
+ var funds=_mwFpFunds_().map(function(f){return {code:f.code,deceased:f.deceased,status:f.status,deadline:f.deadline,collected:(byFund[f.code]||0)/100};});
+ var activity=ss.getSheetByName('MW_DASHBOARD_ACTIVITY'),events=activity?activity.getDataRange().getValues().slice(1).sort(function(a,b){return new Date(b[0])-new Date(a[0]);}).slice(0,30).map(function(r){return {at:r[0] instanceof Date?Utilities.formatDate(r[0],tz,'yyyy-MM-dd HH:mm:ss'):String(r[0]),origin:String(r[1]),action:String(r[2]),outcome:String(r[3]),requestId:String(r[4]),summary:String(r[5])};}):[];
+ return {status:'ok',generatedAt:Utilities.formatDate(new Date(),tz,'yyyy-MM-dd HH:mm:ss'),members:members.length,confirmedFuneralCash:cash/100,availableCredit:credits/100,needsReview:ledger.rows.filter(function(r){return r.needsReview&&!/^registration fee$/i.test(r.type);}).length,recordedEmailSent:sent,otherEmailStates:notSent,
+  weeklyTrend:Object.keys(days).map(function(day){return {date:day,amount:days[day]/100};}),funds:funds,activity:events,
+  note:'Contributions use confirmed fund-specific ledger rows. Available credit is separate and is not added to cash. Activity records confirmed dashboard actions only; no IP/device data or clickstream is collected.'};
+}
+
+// A requested account statement is informational, not a termination notice.
+function _mwAdminStatement_(id){
+ var profile=_mwPrProfile_(id),ss=_mwPrSS_(),tz=ss.getSpreadsheetTimeZone(),now=Utilities.formatDate(new Date(),tz,'yyyy-MM-dd HH:mm'),today=now.slice(0,10),cfg=getSettings();
+ if(!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(profile.email))throw Error('Member email is missing or invalid; correct the verified member record first.');
+ var cents=0,overdue=0,ongoing=0,review=0;
+ var lines=profile.obligations.slice().sort(function(a,b){return a.fundCode.localeCompare(b.fundCode);}).map(function(o){
+  var unresolved=o.status==='REVIEW'||o.balance===null,owing=!unresolved&&o.status!=='EXEMPT'?Math.round(o.balance*100):0;
+  if(unresolved)review++;else{cents+=owing;if(o.fundStatus==='CLOSED'||(o.deadline&&o.deadline<today))overdue+=owing;else ongoing+=owing;}
+  var line=o.fundCode+' — '+(o.deceased||'Name not recorded')+' | Due '+(o.deadline||'not recorded')+' | '+o.status;
+  if(o.status==='EXEMPT')line+=' | Exempt — $0.00 due';
+  else if(unresolved)line+=' | Balance needs verification; excluded from total';
+  else line+=' | Owes $'+o.balance.toFixed(2)+' | Recorded payments $'+o.paid.toFixed(2)+' | Applied credit $'+o.creditApplied.toFixed(2)+(o.lateFee?' | Late fee $'+o.lateFee.toFixed(2)+(o.lateFeePending?' awaiting assessment (included in quoted amount)':' included'):'');
+  if(o.issues.length)line+=' | Notes: '+o.issues.join('; ');return line;
+ });
+ var text=cfg.groupName+' — Balance & owing history\n'+profile.name+' ('+profile.memberId+')\nAs of '+now+' '+tz+'\n\n'+lines.join('\n')+'\n\nTotal verified fund amount owing: $'+(cents/100).toFixed(2)+'\nOverdue/closed-fund amount: $'+(overdue/100).toFixed(2)+'\nOther outstanding funds: $'+(ongoing/100).toFixed(2)+'\nAvailable unapplied funeral credit: $'+profile.availableCredit.toFixed(2)+' (separate; not deducted automatically)\n';
+ if(review)text+='IMPORTANT: '+review+' fund(s) need verification and are excluded from the total above. This is not a final complete balance until those records are resolved.\n';
+ var standing=profile.adminStatus;if(standing)text+='Registration recorded: $'+standing.registrationPaid.toFixed(2)+' of $'+standing.registrationRequired.toFixed(2)+' required.\n';
+ text+='\nPAYMENT HISTORY — newest first\n'+(profile.payments.length?profile.payments.map(function(r){return r.date+' | '+(r.fund||'No fund')+' | $'+r.amount.toFixed(2)+' | '+r.status+' | '+r.type;}).join('\n'):'No non-registration payments recorded.')+'\n\nReversed, dismissed and unresolved entries are history only; they are not counted as confirmed fund payments. Officer exemptions apply only to the officeholder and do not extend to a spouse.\n';
+ text+='If you already paid, please reply with the payment date, amount, sender and transaction reference so leadership can check it before recording anything again.\n';
+ if(cfg.zelleEmail)text+='Zelle to: '+cfg.zelleEmail+'\nMemo: '+profile.memberId+' [FUND CODE]\n';
+ text+='\nThis statement is informational. No records changed when it was prepared.';
+ return {memberId:profile.memberId,name:profile.name,email:profile.email,generatedAt:now+' '+tz,subject:'Balance & owing history — '+profile.memberId,text:text,total:cents/100,overdue:overdue/100,ongoing:ongoing/100,reviewFunds:review,availableCredit:profile.availableCredit};
+}
+
+function _mwAdminOpenFund_(plan){
+ var ss=_mwPrSS_(),d=plan.details,cfg=getSettings(),members=ss.getSheetByName('MEMBERS');
+ if(typeof isSystemOn==='function'&&!isSystemOn())throw Error('System is off; fund creation stopped');
+ if(ss.getSheetByName(d.fundCode)||ss.getSheetByName('TRACK-'+d.fundCode.slice(-3)))throw Error('Fund tabs already exist; inspect before resubmitting');
+ var deadline=Utilities.parseDate(d.deadline+' 23:59:59',ss.getSpreadsheetTimeZone(),'yyyy-MM-dd HH:mm:ss'),announcement=cfg.groupName+'\n'+d.fundCode+' — '+d.deceased+'\n'+d.relationship+' of '+d.claimantName+' ('+d.claimant+')\nContribution: $'+d.amount.toFixed(2)+' | Deadline: '+d.deadline+'\nZelle: '+cfg.zelleEmail+'\nMemo: [YOUR MEMBER ID] '+d.fundCode;
+ var funds=ss.getSheetByName('FUNDS'),fundRow=funds.getLastRow()+1;
+ funds.getRange(fundRow,1,1,13).setValues([[d.fundCode,d.fundCode+' — '+d.deceased,d.deceased,new Date(),d.amount,d.trackRows.length-d.exemptions.length,d.exemptions.map(function(x){return x[1];}).join(', '),0,'ACTIVE',deadline,d.relationship,d.claimant,announcement]]);
+ var exemptions=ss.getSheetByName('EXEMPTIONS');if(!exemptions){exemptions=ss.insertSheet('EXEMPTIONS');exemptions.getRange(1,1,1,6).setValues([['Fund','Member ID','Name','Reason','Credit','Active']]);}if(d.exemptions.length)exemptions.getRange(exemptions.getLastRow()+1,1,d.exemptions.length,6).setValues(d.exemptions);
+ var log=ss.insertSheet(d.fundCode);log.getRange(1,1,6,2).setValues([['Fund',d.fundCode+' — '+d.deceased],['Deceased',d.deceased],['Relationship',d.relationship],['Bereaved',d.claimant+' — '+d.claimantName],['Deadline',d.deadline],['Amount/member',d.amount]]);log.getRange(8,1,1,7).setValues([['Date','Member ID','Full Name','Amount Paid','Balance','Credit to Next Fund','Notes']]);
+ var track=ss.insertSheet('TRACK-'+d.fundCode.slice(-3));track.getRange(1,1).setValue(d.fundCode+' — '+d.deceased+' — Collection Tracker');track.getRange(2,1,2,9).setValues([['Total Members','','Paid','','Pending','','Exempt','','% Collected'],['=COUNTA(A8:A)','','=COUNTIF(H8:H,"PAID")+COUNTIF(H8:H,"COVERED BY CREDIT")','','=COUNTIF(H8:H,"PENDING")','','=COUNTIF(H8:H,"EXEMPT")','','=IFERROR(C3/(C3+E3),0)']]);track.getRange(4,1,2,5).setValues([['Contribution Amount',d.amount,'','Deadline',d.deadline],['Total Collected','=SUM(F8:F)','','Total Outstanding','=SUM(E8:E)']]);track.getRange(7,1,1,9).setValues([['Member ID','Full Name','Amount Owed','Credit Applied','Still Owes','Amount Paid','Date & Time Paid','Status','Notes']]);track.getRange(8,1,d.trackRows.length,9).setValues(d.trackRows);
+ SpreadsheetApp.flush();if(_mwFpHash_(track.getRange(8,1,d.trackRows.length,9).getValues())!==_mwFpHash_(d.trackRows))throw Error('New tracker verification failed; inspect this request before any retry');
+ d.creditEffects.forEach(function(x){if(_mwPrId_(members.getRange(x.row,17).getValue())!==x.memberId||members.getRange(x.row,19).getValue()!==x.before)throw Error('Credit source changed; creation stopped for review');members.getRange(x.row,19).setValue(x.after);if(members.getRange(x.row,19).getValue()!==x.after)throw Error('Credit write verification failed');});
+ var notification=_mwAdminEmail_(cfg.leaderEmail,'Funeral fund created — '+d.fundCode,announcement+'\n\nCredits applied for '+d.creditEffects.length+' members. Exemptions: '+d.exemptions.length+'. Request '+plan.input.requestId+'. Board/Welfare reference: '+d.boardReference+'. Verification: '+d.evidence+'\nNo bulk member emails sent.');
+ return {fundCode:d.fundCode,trackerRows:d.trackRows.length,creditApplications:d.creditEffects.length,notification:notification,message:'New fund created with explicit exemptions and verified credit applications. Review before announcing.'};
+}
