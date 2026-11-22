@@ -106,8 +106,10 @@ function fpDecorateFundCards(){
     const fund=fpFundDetails.find(f=>f.code===code);if(!fund)return;
     let detail=card.querySelector('.fp-fund-details');
     if(!detail){detail=document.createElement('div');detail.className='fp-fund-details';detail.style.cssText='font-size:13px;color:var(--text2);margin:6px 0 10px;line-height:1.6;white-space:pre-line';title.after(detail);}
-    const text='Due date: '+fpPrettyDue(fund.deadline)+'\nClaiming member: '+(fund.beneficiaryName||'Name not recorded')+(fund.bereaved?' ('+fund.bereaved+')':'');
-    if(detail.textContent!==text)detail.textContent=text;
+    const label=(fund.beneficiaryName||'Name not recorded')+(fund.bereaved?' ('+fund.bereaved+')':'');
+    const member=fund.bereaved&&typeof prProfileButton==='function'?prProfileButton(fund.bereaved,label):fpEscape(label);
+    const html='Due date: '+fpEscape(fpPrettyDue(fund.deadline))+'<br>Claiming member: '+member;
+    if(detail.innerHTML!==html)detail.innerHTML=html;
   });
 }
 
