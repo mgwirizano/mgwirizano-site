@@ -19,7 +19,8 @@ function mwPayoutDashboardDispatch(e) {
     var writes = ['fp_save','fp_review_apply','fp_review_resume'].indexOf(p.action) >= 0;
     // Check notification configuration before beginning a financial write.
     if (writes) _mwFpNotificationConfig_();
-    if (/^fp_admin_/.test(p.action)) result = _mwAdminRoute_(p);
+    if(p.action==='fp_version')result={status:'ok',version:'2026-11-22.2',adminAvailable:typeof _mwAdminRoute_==='function',reviewAvailable:typeof _mwPrRoute_==='function'};
+    else if (/^fp_admin_/.test(p.action)) result = _mwAdminRoute_(p);
     else if (/^fp_ops_/.test(p.action)) result = _mwOpsRoute_(p,actor);
     else if (/^fp_review_/.test(p.action)) result = _mwPrRoute_(p,actor);
     else if (p.action === 'fp_funds') result = {status:'ok', funds:_mwFpFunds_()};
@@ -80,7 +81,8 @@ function _mwFpFunds_() {
     var code = String(r[0]).trim().toUpperCase();
     if (seen[code]) throw new Error('Duplicate FUNDS code: ' + code);
     seen[code] = true;
-    return {code:code, deceased:String(r[2] || ''), status:String(r[8] || ''), baseAmount:_mwFpMoney_(r[4])/100,
+    var due=r[9] instanceof Date&&!isNaN(r[9].getTime())?Utilities.formatDate(r[9],_mwFpSS_().getSpreadsheetTimeZone(),'yyyy-MM-dd'):String(r[9]||'').trim(),recorded=String(r[8]||'').toUpperCase();
+    return {code:code, deceased:String(r[2] || ''), recordedStatus:recorded,status:_mwFpCollectionStatus_(recorded,due), baseAmount:_mwFpMoney_(r[4])/100,
       bereaved:String(r[11] || '').trim().toUpperCase(),
       beneficiaryName:memberNames[String(r[11] || '').trim().toUpperCase()] || '',
       deadline:r[9] instanceof Date && !isNaN(r[9].getTime()) ? Utilities.formatDate(r[9],_mwFpSS_().getSpreadsheetTimeZone(),'yyyy-MM-dd') : String(r[9] || '').trim()};
@@ -248,3 +250,5 @@ function _mwFpSave_(p, actor) {
       summary:payload.fundCode?getFundBalanceForDashboard(payload):null};
   }finally{lock.releaseLock();}
 }
+
+function _mwFpCollectionStatus_(status,deadline,today){today=today||Utilities.formatDate(new Date(),'America/Los_Angeles','yyyy-MM-dd');return status==='ACTIVE'&&/^\d{4}-\d{2}-\d{2}$/.test(deadline||'')&&deadline<today?'CLOSED':status;}
