@@ -1,5 +1,5 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),{setup}=require('./test-payment-review.cjs');
-const e=setup();vm.runInContext(fs.readFileSync((fs.existsSync(__dirname+'/MW_Dashboard_Claims.gs')?__dirname:__dirname+'/..')+'/MW_Dashboard_Claims.gs','utf8'),e.c);
+const e=setup();vm.runInContext(fs.readFileSync(__dirname+'/../MW_Dashboard_Claims.gs','utf8'),e.c);
 e.data.MEMBERS[1][8]='Irene Mtileni';e.data.MEMBERS[1][10]='Alice Jones; Beth Jones';e.data.MEMBERS[1][11]='Chris Munthali';
 e.data.FUNDS[1][2]='Mrs. Irene Mtileni';e.data.FUNDS[1][3]=new Date('2026-11-02T18:00:00Z');e.data.FUNDS[1][10]='Mother';e.data.FUNDS[1][11]='MW0083';
 e.data.FUNDS[2][2]='Alice Jones';e.data.FUNDS[2][10]='Child';e.data.FUNDS[2][11]='MW0083';
