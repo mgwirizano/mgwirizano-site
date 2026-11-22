@@ -206,7 +206,7 @@ function _mwPrExecute_(plan){
   // Colors are display only; all amounts have already been verified.
   plan.operations.filter(function(o){return /^TRACK-/.test(o.sheet)&&o.col===4;}).forEach(function(o){var status=String(_mwPrUnpack_(o.after)[0][4]);try{ss.getSheetByName(o.sheet).getRange(o.row,8).setFontColor(/^(PAID|COVERED)/.test(status)?'#217B31':'#D68B0C').setBackground(/^(PAID|COVERED)/.test(status)?'#eaf5ed':'#fff8e1');}catch(_) {}});
   var props=PropertiesService.getScriptProperties(),count=Number(props.getProperty('MWPR_PART_COUNT'));props.deleteProperty('MWPR_PENDING');for(var i=0;i<count;i++)props.deleteProperty('MWPR_PART_'+i);props.deleteProperty('MWPR_PART_COUNT');
-  return {status:'ok',requestId:plan.requestId,message:'Approved request completed and audited. No emails sent.',allocations:plan.allocations};
+  return {status:'ok',requestId:plan.requestId,message:'Approved request completed and audited.',allocations:plan.allocations};
 }
 function _mwPrApply_(p,actor){
   if(p.confirmed!=='YES')throw Error('Preview and confirm first');var lock=LockService.getScriptLock();if(!lock.tryLock(15000))throw Error('Payment operation busy; retry same request');
