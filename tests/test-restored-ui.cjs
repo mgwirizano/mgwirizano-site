@@ -1,0 +1,16 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
+const root=fs.existsSync(__dirname+'/MW_PaymentReview.js')?__dirname:path.dirname(__dirname);
+const source=fs.readFileSync(root+'/MW_PaymentReview.js','utf8'),nodes=new Map();
+function el(id){if(!nodes.has(id))nodes.set(id,{id,style:{},classList:{add(){},remove(){}},setAttribute(){},innerHTML:'',textContent:'',hidden:false});return nodes.get(id);}
+const c={console,Date,Set,Map,Intl,crypto:{randomUUID:()=> 'ui-test-1234567890'},fpEscape:v=>String(v??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x])),fpMoney:n=>'$'+Number(n||0).toFixed(2),allMembers:[{id:'MW0001',name:'Alex',email:'alex@example.test',regStatus:'PAID'}],filteredMembers:[],memberPage:0,MEMBERS_PER_PAGE:50,document:{body:{style:{}},getElementById:el},drawerOpen:false};
+vm.createContext(c);vm.runInContext(source.slice(0,source.indexOf('(function mountPaymentReview(){')),c);
+// A basic profile is rendered before a network response is available.
+c.mwLegacyMember=()=>new Promise(()=>{});c.openDrawer('MW0001','Alex');assert(el('drawer-body').innerHTML.includes('alex@example.test'));assert(!el('drawer-body').innerHTML.includes('Reading exact member and fund records'));
+const adapted=c.mwAdaptLegacyMember({memberId:'MW0001',name:'Alex',fatherName:'Matthew Mandala',motherName:'Mary Mandala',children:'Alice; Bob',payments:[{type:'Registration Fee',amount:25,date:'2026-01-01',status:'CONFIRMED'}]});assert.equal(adapted.beneficiaries.length,4);assert.equal(adapted.paymentHistory.length,1);assert(c.prBeneficiaryCards(adapted).includes('Matthew Mandala'));assert(!c.prBeneficiaryCards(adapted).includes('No beneficiaries recorded'));
+const members=[{memberId:'MW0001',name:'Zed',status:'PAID',paid:10,creditApplied:0,balance:0},{memberId:'MW0002',name:'Alice',status:'PARTIAL',paid:5,creditApplied:0,balance:5},{memberId:'MW0003',name:'Review',status:'REVIEW',paid:0,creditApplied:0,balance:100}];
+const stats=c.mwRosterStats(members);assert.equal(stats.rows,3);assert.equal(stats.confirmedCash,15);assert.equal(stats.outstanding,5);assert.equal(stats.review,1);
+const item={data:{fund:{code:'FUND-001'},members},filter:'UNPAID',sort:'balance'};assert.equal(c.mwRosterRows(item).length,1);assert.equal(c.mwRosterExportRows(item).length,2);item.filter='ALL';item.query='alice';assert.equal(c.mwRosterExportRows(item)[1][1],'MW0002');
+assert(c.mwCSVText([['Name'],['=HYPERLINK("bad")']]).includes("'=HYPERLINK"));assert(c.mwCSVText([['Name'],['<img src=x>']]).includes('<img src=x>'));
+const container={innerHTML:''};c.mwRenderCompatibleOverview(container);assert(container.innerHTML.includes('Overview server update needed'));assert(container.innerHTML.includes('Registration paid'));assert(!container.innerHTML.includes('2.4M'));
+assert(source.indexOf('const mwSelectedMembers=')<source.indexOf('(function mountPaymentReview(){'));
+console.log('PASS: immediate local profile; legacy family mapping preserves full names; registration history retained; correct nonzero derived roster totals; review debt excluded; filtered/sorted CSV data; spreadsheet formula escaping; nonblank old-server Overview; list state initialized before mounting.');

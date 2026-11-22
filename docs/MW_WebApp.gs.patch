@@ -1,0 +1,8 @@
+--- a/MW_WebApp.gs
++++ b/MW_WebApp.gs
+@@ -98,4 +98,5 @@
+ 
+ function doPost(e) {
++  var fpResponse = mwPayoutDashboardDispatch(e); if (fpResponse) return fpResponse;
+   try {
+     // Parse incoming JSON from the form
