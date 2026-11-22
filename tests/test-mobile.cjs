@@ -1,0 +1,10 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const source=fs.readFileSync(__dirname+'/../MW_PaymentReview.js','utf8');
+let css='',mounted=0;
+const cells=[{colSpan:1,label:null,getAttribute(){return this.label;},setAttribute(k,v){this.label=v;}},{colSpan:1,label:null,getAttribute(){return this.label;},setAttribute(k,v){this.label=v;}}];
+const table={classList:{add(v){assert.equal(v,'mw-mobile-table');}},querySelectorAll(q){return q==='thead th'?[{textContent:'Member'},{textContent:'Amount'}]:[{children:cells}];}};
+const context={document:{body:{},createElement:()=>({set textContent(v){css=v;}}),head:{appendChild(){mounted++;}},querySelectorAll:()=>[table]},Array};vm.createContext(context);
+vm.runInContext(source.slice(source.indexOf('function mwInstallMobileTables()'),source.indexOf('(function mountPaymentReview(){')),context);context.mwMountMobileStyle();context.mwInstallMobileTables();assert.equal(mounted,1);assert.equal(cells[0].label,'Member');assert.equal(cells[1].label,'Amount');
+for(const rule of ['max-width:760px','font-size:16px','max-width:100%','height:100dvh','overflow-x:auto','scroll-snap-type:x proximity','content:attr(data-label)','min-height:44px','env(safe-area-inset-bottom)'])assert(css.includes(rule),rule);
+assert(!css.includes('body{overflow-x:hidden'));assert(css.includes('grid-template-columns:minmax(0,1fr)'));assert(css.includes('.mw-mobile-table thead{position:absolute'));
+console.log('PASS: mobile table labels retain exact headings; narrow-screen form and chart layout; locally scrolling navigation; full-width dynamic-height drawer; touch targets and 16px controls; safe-area padding. Visual layout still requires installed-browser verification.');
