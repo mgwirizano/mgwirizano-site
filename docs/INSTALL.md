@@ -1,6 +1,6 @@
-# Dashboard interactive operations update — v3
+# Dashboard interactive operations update — v4
 
-1. In the same Apps Script project, replace all six addon files with the supplied versions: `MW_Dashboard_Payouts`, `MW_Dashboard_PaymentReview`, `MW_Dashboard_Operations`, `MW_Dashboard_Claims`, `MW_Dashboard_Admin` and the new `MW_Dashboard_Actions`. Add any of these files that are missing. Do not paste these inside another function. Keep the existing `doPost` dispatch hook once; do not add another `doGet` or replace the main bridge.
+1. In the same Apps Script project, replace all seven addon files with the supplied versions: `MW_Dashboard_Payouts`, `MW_Dashboard_PaymentReview`, `MW_Dashboard_Operations`, `MW_Dashboard_Claims`, `MW_Dashboard_Admin` `MW_Dashboard_Actions` and the new `MW_Dashboard_Reports`. Add any of these files that are missing. Do not paste these inside another function. Keep the existing `doPost` dispatch hook once; do not add another `doGet` or replace the main bridge.
 2. Replace the two website files `MW_PayoutDashboard.js` and `MW_PaymentReview.js`. Keep each existing script tag once. The included patches show the hooks only if they have never been installed.
 3. Save and deploy a new version of the **same** Apps Script web app, then publish the two website files through your usual process. Refresh the dashboard.
 
@@ -56,3 +56,26 @@ Mobile navigation scrolls within the tab bar. Tables with headings become labell
 **Missed registrations:** scan in Registration & members, then choose **Recover selected missed registrations** and enter the exact row numbers. Preview assigns IDs above the known historical maximum, archives original rows, and preserves all financial cells, family details and existing IDs. Duplicate/shared emails and same-name records require review. No welcome email is sent by recovery; preview selected welcome resends next.
 
 The supplied original `onFormSubmit` is not replayed: it assigns a new ID even for an existing row, scans only current IDs, and clears credit / writes a numeric credit into the registration-status column. Its duplicate-email comparison also reads column A rather than B. This addon leaves that original handler unchanged. **Correct and test that original intake handler before opening the new registration form**; dashboard recovery does not fix the installed form trigger. The dashboard resend action uses a separate HTML message, tracks uncertain sends and preserves IDs/credit.
+
+
+## v4: Financial reports and approved top summary
+
+Add **MW_Dashboard_Reports.gs** to the same Apps Script project. Replace the supplied Actions/Payouts addon versions and the two website scripts, then deploy a new version of the same web app. No additional website script tag is needed. The Reports module reads existing records; it does not insert screenshot figures, change payments, send emails or rebuild trackers.
+
+The **Financial reports** workspace has fund performance, fund calculation, payouts/refunds/expenses, current member balances and a printable Board package. Amount buttons open supporting calculations/rows. Contribution distributions count receipt entries, not unique members. Cash activity date filters apply to receipts and outgoing entries only. Fund pools and member balances use current records and are explicitly labelled; past tracker balances cannot be reconstructed by filtering current rows.
+
+The approved styling changes only `#sec-overview` summary cards: compact translucent navy, centered text, green/red/gold/blue figures, no emoji or donut, preserved dynamic amounts and existing click handlers. Existing tabs, headers, main cards and other sections keep their styling. On narrow screens the top cards wrap, and the report matrix becomes expandable member cards. Browsers without backdrop-filter retain a readable navy fallback. No image mockup figures are hardcoded into the website.
+
+### Optional verified bank amount adjustments
+
+The report will not infer the example $0.33 difference from an image. If you already have verified deltas, a separate **PAYOUT ADJUSTMENTS** sheet can expose them with exactly these row-1 headers:
+
+`Date | Fund Code | Adjustment Amount | PAYOUTS Row | Explanation | Status`
+
+Dates and signed adjustment amounts must be real date/number cells. Reference the original matching family PAYOUTS row number. Only **VERIFIED** rows are read; ambiguous duplicate deltas for one payout stop the report. The delta is displayed separately and reduces the calculated family balance, without rewriting the original payout, adding another cash payment or altering the recorded period outgoing total. A delta is the difference between the bank amount and the original recorded transfer, not the full transfer amount. Settlement/pending status is not established from PAYOUTS alone.
+
+If the register does not exist, the report says adjustment/settlement evidence is unavailable. No sheet or adjustment is created automatically. Keep row references current if PAYOUTS rows are inserted/deleted.
+
+Embedded late fees are not invented from receipt amounts or outstanding assessments. Separately posted late-fee receipts are shown, and the difference between cash, applied credit and the existing tracker pool is exposed for allocation review. Pool assumptions/warnings remain visible in the fund breakdown and printed package. Admin retention is part of the core base, not another bank debit.
+
+CSV export follows the selected view and member/category filter. Board PDF prints the complete loaded report, including fund calculations and current owing members. Browser-generated PDF uses Print / save PDF; the existing confirmed quarterly document/email generator remains a separate explicit action. Dates and generated timestamps print with the report.
