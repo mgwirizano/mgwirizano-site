@@ -6,7 +6,9 @@ function _mwPrValues_(sheet){var name=sheet.getName();if(!MWPR_READ_CACHE[name])
 function _mwPrRoute_(p,actor){
   MWPR_READ_CACHE={}; MWPR_SS=null;
   if(p.action==='fp_review_source'){var rows=_mwPrLedger_().rows.filter(function(r){return r.row===Number(p.sourceRow);});if(rows.length!==1)throw Error('Payment row not found');return {status:'ok',payment:_mwPrPublicPayment_(rows[0])};}
+  if(p.action==='fp_review_export')return _mwPrFeed_(p);
   if(p.action==='fp_review_feed')return _mwPrFeed_(p);
+  if(p.action==='fp_review_claims'){var member=_mwPrMember_(p.memberId),family={father:_mwPrText_(member.raw[7]),mother:_mwPrText_(member.raw[8]),spouse:_mwPrText_(member.raw[9]),children:_mwPrText_(member.raw[10]),siblings:_mwPrText_(member.raw[11])};if(typeof _mwClaimProfile_!=='function')throw Error('Claim history addon is missing. Install MW_Dashboard_Claims and redeploy the same web app.');var claims=_mwClaimProfile_(member.id,family);claims.status='ok';claims.family=family;return claims;}
   if(p.action==='fp_review_profile')return _mwPrProfile_(p.memberId);
   if(p.action==='fp_review_fund')return _mwPrFundView_(p.fundCode);
   if(p.action==='fp_review_preview')return _mwPrPreview_(p,actor);
@@ -19,7 +21,7 @@ function _mwPrCode_(v){var matches=_mwPrText_(v).toUpperCase().match(/\bFUND-\d{
 function _mwPrId_(v){var id=_mwPrText_(v).toUpperCase();return /^MW\d{4,6}$/.test(id)?id:'';}
 function _mwPrDate_(v){return v instanceof Date&&!isNaN(v.getTime())?Utilities.formatDate(v,_mwPrSS_().getSpreadsheetTimeZone(),'yyyy-MM-dd HH:mm:ss'):'';}
 function _mwPrNormalize_(v){return _mwPrText_(v).toLowerCase().replace(/[^a-z0-9]/g,'');}
-function _mwPrLedger_(){
+function _mwPrLedger_(onlyMemberId){
   var sh=_mwPrSS_().getSheetByName('PAYMENTS');if(!sh)throw Error('PAYMENTS missing');
   var data=sh.getDataRange().getValues(),header=-1,map={};
   var labels={date:['paymentdatetime','paymentdate'],id:['memberid'],name:['fullname'],amount:['amount','amountdollars'],type:['paymenttype'],fund:['fund','fundcode'],prev:['prevbalance','previousbalance'],balance:['newbalance'],sender:['zellesendername'],memo:['rawmemoexactaswritten','rawmemo'],status:['status'],processed:['processedat'],email:['emailsent'],notes:['notes']};
@@ -27,6 +29,7 @@ function _mwPrLedger_(){
   if(header<0)throw Error('Cannot identify PAYMENTS headers; no column guessing permitted.');
   var rows=[];
   data.slice(header+1).forEach(function(r,i){
+    if(onlyMemberId&&_mwPrId_(r[map.id])!==onlyMemberId)return;
     if(!r.some(function(v){return v!==''&&v!==null;}))return;
     if(typeof r[map.amount]!=='number'||!isFinite(r[map.amount]))return;
     var type=_mwPrText_(r[map.type]),status=_mwPrText_(r[map.status]).toUpperCase(),id=_mwPrId_(r[map.id]),fund=_mwPrCode_(r[map.fund]);
@@ -51,8 +54,9 @@ function _mwPrFeed_(p){
   var ledger=_mwPrLedger_(),all=ledger.rows.filter(function(r){return !/^registration fee$/i.test(r.type);});
   var query=_mwPrText_(p.query).toLowerCase(),fund=_mwPrText_(p.fundCode);
   var filtered=all.filter(function(r){return (p.reviewOnly!=='YES'||r.needsReview)&&(!p.statusFilter||r.status===p.statusFilter)&&(!fund||r.fund===fund)&&(!query||[r.memberId,r.name,r.sender,r.memo,r.status].join(' ').toLowerCase().indexOf(query)>=0);});
-  filtered.sort(function(a,b){return b.timestamp-a.timestamp||b.row-a.row;});
-  var offset=Math.max(0,parseInt(p.offset,10)||0),limit=50;
+  var sorts={date:'timestamp',name:'name',member:'memberId',amount:'amount',fund:'fund',status:'status',email:'emailState'},sort=sorts[p.sortBy]||'timestamp',direction=p.sortDirection==='ASC'?1:-1;
+  filtered.sort(function(a,b){var x=a[sort],y=b[sort],v=typeof x==='number'?x-y:String(x||'').localeCompare(String(y||''));return direction*v||b.row-a.row;});
+  var exporting=p.action==='fp_review_export';if(exporting&&filtered.length>20000)throw Error('Narrow the search before exporting more than 20,000 records');var offset=exporting?0:Math.max(0,parseInt(p.offset,10)||0),limit=exporting?filtered.length:50;
   return {status:'ok',payments:filtered.slice(offset,offset+limit).map(_mwPrPublicPayment_),total:filtered.length,offset:offset,limit:limit,
     stats:{rows:all.length,review:all.filter(function(r){return r.needsReview;}).length,confirmedCash:all.filter(function(r){return r.allocated;}).reduce(function(a,r){return a+Math.round(r.amount*100);},0)/100},
     pendingAction:PropertiesService.getScriptProperties().getProperty('MWPR_PENDING')||''};
@@ -94,7 +98,7 @@ function _mwPrObligation_(id,code,ledger){
   if(recorded<0||applied<0||trackPaid<0)issues.push('Negative tracker value requires review');
   if(!exempt&&recorded!==expected&&!pendingFee)issues.push('TRACK balance differs from fund-specific allocation');
   var status=exempt?'EXEMPT':issues.some(function(x){return !/^\$5 late fee/.test(x);})?'REVIEW':balance===0?(applied>0&&paid===0?'COVERED BY CREDIT':'PAID'):(paid+applied>0?'PARTIAL':'PENDING');
-  return {fundCode:code,deceased:_mwPrText_(f.raw[2]),fundStatus:_mwPrText_(f.raw[8]),base:base/100,lateFee:fee/100,lateFeePending:pendingFee,
+  return {fundCode:code,deceased:_mwPrText_(f.raw[2]),fundStatus:_mwFpCollectionStatus_(_mwPrText_(f.raw[8]),deadline),base:base/100,lateFee:fee/100,lateFeePending:pendingFee,
     balance:balance/100,recordedBalance:recorded/100,paid:paid/100,creditApplied:applied/100,status:status,trackerStatus:_mwPrText_(tr[7]),
     paymentDates:paidRows.map(function(r){return r.date;}).filter(Boolean).sort().reverse(),deadline:deadline,issues:issues,
     _track:{sheet:sh.getName(),row:t.row,raw:tr},_fund:{row:f.row,raw:f.raw}};
@@ -102,15 +106,15 @@ function _mwPrObligation_(id,code,ledger){
 function _mwPrPublicObligation_(o){var r={};Object.keys(o).forEach(function(k){if(k.charAt(0)!=='_')r[k]=o[k];});return r;}
 function _mwPrProfile_(id){
   MWPR_READ_CACHE={};
-  var m=_mwPrMember_(id),ledger=_mwPrLedger_(),funds=_mwFpFunds_(),obligations=funds.map(function(f){return _mwPrPublicObligation_(_mwPrObligation_(m.id,f.code,ledger));});
+  var m=_mwPrMember_(id),ledger=_mwPrLedger_(m.id),funds=_mwFpFunds_(),obligations=funds.map(function(f){return _mwPrPublicObligation_(_mwPrObligation_(m.id,f.code,ledger));});
   var payments=ledger.rows.filter(function(r){return r.memberId===m.id&&!/^registration fee$/i.test(r.type);}).sort(function(a,b){return b.timestamp-a.timestamp||b.row-a.row;});
   var family={father:_mwPrText_(m.raw[7]),mother:_mwPrText_(m.raw[8]),spouse:_mwPrText_(m.raw[9]),children:_mwPrText_(m.raw[10]),siblings:_mwPrText_(m.raw[11])};
   var adminStatus=typeof _mwAdminProfile_==='function'?_mwAdminProfile_(m,ledger,obligations):null;
-  var claimProfile=typeof _mwClaimProfile_==='function'?_mwClaimProfile_(m.id,family):{claimedFunds:[],beneficiaries:[],claimWarnings:['Claim history module is not installed; previous claims cannot be verified.'],claimPolicyNote:'Claim history is not available.'};
+  var claimProfile=typeof _mwClaimProfile_==='function'?_mwClaimProfile_(m.id,family):{claimedFunds:[],beneficiaries:Object.keys(family).reduce(function(a,key){String(family[key]||'').split(/\r?\n|[,;]/).forEach(function(name){name=name.trim();if(name&&!/^(n\/?a|none|unknown)$/i.test(name))a.push({name:name,relationship:key,status:'UNVERIFIED',label:'Claim history not verified',claims:[],possibleClaims:[]});});return a;},[]),claimWarnings:['Claim history module is not installed; previous claims cannot be verified.'],claimPolicyNote:'Claim history is not available.'};
   return {status:'ok',memberId:m.id,name:_mwPrText_(m.raw[2]),email:_mwPrText_(m.raw[1]),phone:_mwPrText_(m.raw[3]),location:_mwPrText_(m.raw[4]),
-    joined:_mwPrDate_(m.raw[0]),emergencyContact:_mwPrText_(m.raw[12]),adminStatus:adminStatus,availableCredit:_mwFpMoney_(m.raw[18])/100,obligations:obligations,payments:payments.map(_mwPrPublicPayment_),
+    joined:_mwPrDate_(m.raw[0]),daysAsMember:m.raw[0] instanceof Date?Math.max(0,Math.floor((new Date().getTime()-m.raw[0].getTime())/86400000)):null,gender:_mwPrText_(m.raw[5]),recordedPriorContribution:_mwPrText_(m.raw[15]),paymentHistory:ledger.rows.filter(function(r){return r.memberId===m.id;}).sort(function(a,b){return b.timestamp-a.timestamp||b.row-a.row;}).map(_mwPrPublicPayment_),emergencyContact:_mwPrText_(m.raw[12]),adminStatus:adminStatus,availableCredit:_mwFpMoney_(m.raw[18])/100,obligations:obligations,payments:payments.map(_mwPrPublicPayment_),
     issues:obligations.filter(function(o){return o.issues.length;}).map(function(o){return o.fundCode+': '+o.issues.join('; ');}),
-    family:family,claimedFunds:claimProfile.claimedFunds,beneficiaries:claimProfile.beneficiaries,claimWarnings:claimProfile.claimWarnings,claimPolicyNote:claimProfile.claimPolicyNote};
+    claimHistoryAvailable:typeof _mwClaimProfile_==='function',family:family,claimedFunds:claimProfile.claimedFunds,beneficiaries:claimProfile.beneficiaries,claimWarnings:claimProfile.claimWarnings,claimPolicyNote:claimProfile.claimPolicyNote};
 }
 function _mwPrFundView_(code){
   MWPR_READ_CACHE={};
@@ -118,7 +122,7 @@ function _mwPrFundView_(code){
   var tracked=sh.getDataRange().getValues().slice(7),ids=tracked.map(function(r){return _mwPrId_(r[0]);}).filter(function(id,i,a){return id&&a.indexOf(id)===i;});
   var rows=ids.map(function(id){var o=_mwPrPublicObligation_(_mwPrObligation_(id,code,ledger));o.memberId=id;try{var m=_mwPrMember_(id);o.name=_mwPrText_(m.raw[2]);}catch(_){o.name=_mwPrText_((tracked.filter(function(r){return _mwPrId_(r[0])===id;})[0]||[])[1])||id;o.formerMember=true;}return o;});
   var confirmed=ledger.rows.filter(function(r){return r.fund===code&&r.allocated&&/^funeral contribution$/i.test(r.type);}).reduce(function(a,r){return a+Math.round(r.amount*100);},0)/100;
-  return {status:'ok',fund:fund,members:rows,stats:{rows:rows.length,paid:rows.filter(function(r){return /^(PAID|COVERED BY CREDIT)$/.test(r.status);}).length,unpaid:rows.filter(function(r){return r.status!=='EXEMPT'&&r.balance>0;}).length,review:rows.filter(function(r){return r.status==='REVIEW';}).length,exempt:rows.filter(function(r){return r.status==='EXEMPT';}).length,confirmedCash:confirmed,outstanding:Math.round(rows.filter(function(r){return r.status!=='EXEMPT';}).reduce(function(a,r){return a+Number(r.balance||0);},0)*100)/100}};
+  return {status:'ok',fund:fund,members:rows,stats:{rows:rows.length,paid:rows.filter(function(r){return /^(PAID|COVERED BY CREDIT)$/.test(r.status);}).length,unpaid:rows.filter(function(r){return r.status!=='EXEMPT'&&r.balance>0;}).length,review:rows.filter(function(r){return r.status==='REVIEW';}).length,exempt:rows.filter(function(r){return r.status==='EXEMPT';}).length,confirmedCash:confirmed,outstanding:Math.round(rows.filter(function(r){return r.status!=='EXEMPT'&&r.status!=='REVIEW';}).reduce(function(a,r){return a+Number(r.balance||0);},0)*100)/100}};
 }
 
 // Journaled writes: one approved request at a time; old/new values verified.
