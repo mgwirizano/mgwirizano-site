@@ -1,7 +1,6 @@
 // Add this file to the existing project. Do not replace doGet or other bridges.
 // New dashboard actions use POST only. No bank transfer or member-ledger writes.
 var MW_FP = {
-  googleClientId: '703408034852-6l0ofo593604p3jc1frn0t90prp6se87.apps.googleusercontent.com',
   leaderIds: ['MW0001','MW0005','MW0007','MW0324','MW0369','MW0031'],
   adminRate: 0.05,
   headers: ['Date','Fund Code','Amount','Description','SENT BY','Platform','Receiver','Notes']
@@ -16,30 +15,48 @@ function mwPayoutDashboardDispatch(e) {
   if (!/^fp_/.test(String(p.action || ''))) return null;
   var result;
   try {
-    var actor = _mwFpAuthorize_(p.idToken);
+    var actor = 'Dashboard entry (identity not verified)';
+    var writes = ['fp_save','fp_review_apply','fp_review_resume'].indexOf(p.action) >= 0;
+    // Check notification configuration before beginning a financial write.
+    if (writes) _mwFpNotificationConfig_();
     if (/^fp_review_/.test(p.action)) result = _mwPrRoute_(p,actor);
     else if (p.action === 'fp_funds') result = {status:'ok', funds:_mwFpFunds_()};
     else if (p.action === 'fp_balance') result = getFundBalanceForDashboard(p);
     else if (p.action === 'fp_preview') result = _mwFpPreview_(p, actor);
     else if (p.action === 'fp_save') result = _mwFpSave_(p, actor);
     else throw new Error('Unknown payout action');
+    if (writes && result.status === 'ok' && !result.alreadyRecorded) {
+      var notice = _mwFpNotify_(p,result);
+      result.notification = notice;
+      result.message += ' ' + notice.message;
+    }
   } catch (err) { result = {status:'error', message:err.message}; }
   return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
 }
 
-function _mwFpAuthorize_(token) {
-  if (!token || String(token).length > 6000) throw new Error('Sign in with Google for fund balances and payout entry.');
-  var response = UrlFetchApp.fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(token), {muteHttpExceptions:true});
-  if (response.getResponseCode() !== 200) throw new Error('Google sign-in expired. Sign in again.');
-  var info = JSON.parse(response.getContentText());
-  if (info.aud !== MW_FP.googleClientId || ['accounts.google.com','https://accounts.google.com'].indexOf(info.iss) < 0 ||
-      Number(info.exp) <= Date.now()/1000 || String(info.email_verified) !== 'true') throw new Error('Invalid Google sign-in.');
-  var allowed = PropertiesService.getScriptProperties().getProperty('PAYOUT_ADMIN_EMAILS');
-  if (!allowed) throw new Error('Set PAYOUT_ADMIN_EMAILS in Script Properties to the authorized treasurer and secretary Google emails.');
-  var editors = allowed.split(/[,;\n]/);
-  var email = String(info.email || '').toLowerCase();
-  if (!editors.some(function(x){return x.trim().toLowerCase() === email;})) throw new Error('Treasurer or secretary access is required.');
-  return email;
+// Uses the existing leadership notification address; no new login or PIN.
+function _mwFpNotificationConfig_() {
+  var cfg = getSettings();
+  var email = String(cfg.leaderEmail || '').trim();
+  if (!email) throw new Error('Leadership notification email is missing in settings. No new write started.');
+  return {email:email,name:String(cfg.groupName || 'Mgwirizano Watsopano')};
+}
+function _mwFpNotify_(p,result) {
+  // Called only after verified completion, never for previews or repeated requests.
+  try {
+    var cfg=_mwFpNotificationConfig_(),stamp=Utilities.formatDate(new Date(),_mwFpSS_().getSpreadsheetTimeZone(),'yyyy-MM-dd HH:mm:ss z');
+    var lines=['Dashboard financial change completed','Timestamp: '+stamp,'Request ID: '+String(p.requestId || ''),'Action: '+p.action,
+      'Source: dashboard entry; individual identity was not verified.'];
+    if(p.action==='fp_save')lines=lines.concat(['PAYOUTS row: '+result.row,'Fund: '+String(p.fundCode || 'Organization'),
+      'Amount: $'+Number(p.amount).toFixed(2),'Receiver: '+String(p.receiver || ''),'Bank reference: '+String(p.reference || '')]);
+    else lines.push('Allocations: '+JSON.stringify(result.allocations || []));
+    lines.push('This confirms a recorded change. It does not confirm a bank transfer.');
+    var sent=sendEmail(cfg.email,'Dashboard change recorded | '+cfg.name,lines.join('\n'),{name:cfg.name,replyTo:cfg.email});
+    if(sent===false)throw new Error('Email helper did not confirm sending.');
+    return {status:'sent',timestamp:stamp,message:'Confirmation email sent to '+cfg.email+'.'};
+  } catch(err) {
+    return {status:'failed',message:'Records were saved, but confirmation email failed: '+err.message+'. Do not repeat the payment.'};
+  }
 }
 
 function _mwFpSS_() { return getSpreadsheet(); }
