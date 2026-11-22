@@ -102,10 +102,12 @@ function _mwPrProfile_(id){
   MWPR_READ_CACHE={};
   var m=_mwPrMember_(id),ledger=_mwPrLedger_(),funds=_mwFpFunds_(),obligations=funds.map(function(f){return _mwPrPublicObligation_(_mwPrObligation_(m.id,f.code,ledger));});
   var payments=ledger.rows.filter(function(r){return r.memberId===m.id&&!/^registration fee$/i.test(r.type);}).sort(function(a,b){return b.timestamp-a.timestamp||b.row-a.row;});
+  var family={father:_mwPrText_(m.raw[7]),mother:_mwPrText_(m.raw[8]),spouse:_mwPrText_(m.raw[9]),children:_mwPrText_(m.raw[10]),siblings:_mwPrText_(m.raw[11])};
+  var claimProfile=typeof _mwClaimProfile_==='function'?_mwClaimProfile_(m.id,family):{claimedFunds:[],beneficiaries:[],claimWarnings:['Claim history module is not installed; previous claims cannot be verified.'],claimPolicyNote:'Claim history is not available.'};
   return {status:'ok',memberId:m.id,name:_mwPrText_(m.raw[2]),email:_mwPrText_(m.raw[1]),phone:_mwPrText_(m.raw[3]),location:_mwPrText_(m.raw[4]),
     joined:_mwPrDate_(m.raw[0]),availableCredit:_mwFpMoney_(m.raw[18])/100,obligations:obligations,payments:payments.map(_mwPrPublicPayment_),
     issues:obligations.filter(function(o){return o.issues.length;}).map(function(o){return o.fundCode+': '+o.issues.join('; ');}),
-    family:{father:_mwPrText_(m.raw[7]),mother:_mwPrText_(m.raw[8]),spouse:_mwPrText_(m.raw[9]),children:_mwPrText_(m.raw[10]),siblings:_mwPrText_(m.raw[11])}};
+    family:family,claimedFunds:claimProfile.claimedFunds,beneficiaries:claimProfile.beneficiaries,claimWarnings:claimProfile.claimWarnings,claimPolicyNote:claimProfile.claimPolicyNote};
 }
 function _mwPrFundView_(code){
   MWPR_READ_CACHE={};
