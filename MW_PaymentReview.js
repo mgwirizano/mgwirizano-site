@@ -1,11 +1,12 @@
 /* Load after MW_PayoutDashboard.js. Uses the existing dashboard; no extra login or PIN. */
 let prFeed=null,prOffset=0,prBusy=false,prProfile=null,prAction=null,prPreview=null,prProfileSequence=0,prFundSequence=0;
-const PR_HTML=`<section class="card fp-panel" id="sec-payment-review"><div class="card-header"><span class="card-title">Payments — newest first</span></div><div class="fp-body">
-<p>Reads PAYMENTS directly. Registration rows are excluded. Payments load automatically. Financial changes require a dry-run preview and confirmation.</p>
+const PR_HTML=`<section class="card fp-panel" id="sec-payment-review"><div class="card-header"><span class="card-title">Contribution payments</span></div><div class="fp-body">
+<p>Review recent contributions, resolve payment issues and open member payment histories.</p>
+<div id="pr-counts"></div>
 <div class="fp-fields"><div><label for="pr-query">Member ID, name, sender or memo</label><input id="pr-query" placeholder="Search payments" onkeydown="if(event.key==='Enter')prLoad(0)"></div><div><label for="pr-filter">Show</label><select id="pr-filter" onchange="prLoad(0)"><option value="ALL">All non-registration payments</option><option value="REVIEW">Needs review</option></select></div></div>
-<div class="fp-actions"><button class="hero-btn primary" onclick="prLoad(0)">Load / refresh payments</button><button class="hero-btn secondary" id="pr-prev" onclick="prLoad(Math.max(0,prOffset-50))">Previous page</button><button class="hero-btn secondary" id="pr-next" onclick="prLoad(prOffset+50)">Next page</button></div>
-<div id="pr-message" role="status" aria-live="polite"></div><div id="pr-counts"></div><div id="pr-pending"></div><div id="pr-payments"></div>
-<details style="margin-top:24px"><summary>Fund payment dates &amp; outstanding obligations</summary><label for="pr-fund">Fundraiser</label><select id="pr-fund" onchange="prLoadFund()"><option value="">Select a fund</option></select><div class="fp-actions"><button class="hero-btn secondary" onclick="prLoadFund()">Refresh fund list</button></div><div id="pr-fund-list"></div></details>
+<div class="fp-actions"><button class="hero-btn primary" onclick="prLoad(0)">Refresh payments</button><button class="hero-btn secondary" id="pr-prev" onclick="prLoad(Math.max(0,prOffset-50))">Previous page</button><button class="hero-btn secondary" id="pr-next" onclick="prLoad(prOffset+50)">Next page</button></div>
+<div id="pr-message" role="status" aria-live="polite"></div><div id="pr-pending"></div><div id="pr-payments"></div>
+<details style="margin-top:24px"><summary>Payment dates &amp; outstanding by fund</summary><label for="pr-fund">Fundraiser</label><select id="pr-fund" onchange="prLoadFund()"><option value="">Select a fund</option></select><div class="fp-actions"><button class="hero-btn secondary" onclick="prLoadFund()">Refresh fund list</button></div><div id="pr-fund-list"></div></details>
 </div></section>`;
 function prMessage(text,error){const e=document.getElementById('pr-message');if(e){e.textContent=text;e.className=error?'fp-error':'';}}
 function prInvalidate(){prPreview=null;const b=document.getElementById('pr-apply');if(b)b.disabled=true;const e=document.getElementById('pr-action-preview');if(e)e.textContent='';}
@@ -14,16 +15,16 @@ function prProfileButton(id,label){return id?'<button class="hero-btn secondary"
 async function prLoad(offset=0){
  if(prBusy)return;prBusy=true;ftBusy=true;prMessage('Reading PAYMENTS…');
  try{prFeed=await fpCall('fp_review_feed',{offset,query:document.getElementById('pr-query').value,reviewOnly:document.getElementById('pr-filter').value==='REVIEW'?'YES':'NO'});prOffset=prFeed.offset;
-  document.getElementById('pr-counts').textContent=prFeed.total+' matching rows. '+prFeed.stats.review+' rows need review across the ledger. Confirmed non-registration allocations: '+fpMoney(prFeed.stats.confirmedCash)+' (not a bank balance).';
+  document.getElementById('pr-counts').innerHTML='<div class="mw-review-stats"><div class="mw-review-stat"><span>Matching payments</span><strong>'+Number(prFeed.total).toLocaleString()+'</strong></div><div class="mw-review-stat mw-review-attention"><span>Need review · all records</span><strong>'+Number(prFeed.stats.review).toLocaleString()+'</strong></div><div class="mw-review-stat mw-review-confirmed"><span>Recorded contributions</span><strong>'+fpMoney(prFeed.stats.confirmedCash)+'</strong></div></div>';
   document.getElementById('pr-prev').disabled=prOffset===0;document.getElementById('pr-next').disabled=prOffset+50>=prFeed.total;
   document.getElementById('pr-payments').innerHTML=prTable(['Payment date','Member / sender','Amount','Type / fund','Status / issues','Action'],prFeed.payments.map(r=>[
-   fpEscape(r.date||'Date needs review'),prProfileButton(r.memberId,r.name||r.memberId)+'<div>'+fpEscape(r.sender)+'</div>',fpMoney(r.amount),fpEscape(r.type)+'<br>'+fpEscape(r.fund||'No fund')+'<br><small>PAYMENTS row '+r.row+'</small>',fpEscape(r.status)+'<br>'+r.reasons.map(fpEscape).join('<br>'),'<button class="hero-btn secondary" onclick="prOpenPayment('+r.row+')">'+(r.canAllocate?'Fix / allocate':'Inspect')+'</button>'
+   fpEscape(r.date||'Date needs review'),prProfileButton(r.memberId,r.name||r.memberId)+'<div>'+fpEscape(r.sender)+'</div>',fpMoney(r.amount),fpEscape(r.type)+'<br>'+fpEscape(r.fund||'No fund')+'<br><small>PAYMENTS row '+r.row+'</small>','<span class="mw-payment-status '+(r.needsReview?'needs-review':'')+'">'+fpEscape(r.status)+'</span><br>'+r.reasons.map(fpEscape).join('<br>'),'<button class="hero-btn secondary" onclick="prOpenPayment('+r.row+')">'+(r.canAllocate?'Fix / allocate':'Inspect')+'</button>'
   ]));
   ['sec-members','sec-overview','sec-activity'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
   document.querySelectorAll('#main-content .card-title').forEach(e=>{if(['Priority pulse','Eligibility status'].includes(e.textContent.trim()))e.closest('.card').style.display='none';});
   document.getElementById('pr-pending').innerHTML=prFeed.pendingAction?'<div class="fp-note">Unfinished approved action: '+fpEscape(prFeed.pendingAction)+' <button class="hero-btn secondary" onclick="prResume()">Resume approved action</button></div>':'';
   const list=await fpCall('fp_funds'),select=document.getElementById('pr-fund'),cur=select.value;select.replaceChildren(new Option('Select a fund',''));list.funds.forEach(f=>select.add(new Option(f.code+' — '+f.deceased+' ('+f.status+')',f.code)));select.value=cur;
-  prMessage('Newest to oldest by actual payment date; rows with no valid date are held for review.');
+  prMessage('Newest payments first. Open a member name for payment history.');
  }catch(e){prMessage(e.message,true);}finally{prBusy=false;ftBusy=false;}
 }
 async function prLoadFund(){
@@ -93,6 +94,7 @@ runMemberLookup=function(){
  function mount(){
   const target=document.querySelector('#main-content .two-col');if(!target||document.getElementById('sec-payment-review'))return;
   target.insertAdjacentHTML('beforebegin',PR_HTML);
+  if(typeof mwArrangeWorkspace==='function')mwArrangeWorkspace();
   prLoad(0);
  }
  new MutationObserver(mount).observe(document.getElementById('main-content'),{childList:true,subtree:true});mount();
