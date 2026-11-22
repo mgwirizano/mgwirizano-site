@@ -17,7 +17,7 @@ function _mwOpsMailSource_(msg){
   var body=msg.getPlainBody(),amount=Number(parseZelleAmount(body)),sender=(body.match(/^([^\n]+?)\s+sent you money/im)||[])[1];
   var extracted=extractMemberIdsAndNames(body),tx=(body.match(/Transaction number[\s*:]*([0-9]+)/i)||[])[1]||'';
   if(!sender||!isFinite(amount)||amount<=0)throw Error('Sender or amount could not be verified. Review the original bank email.');
-  return {messageId:msg.getId(),transactionId:tx,date:msg.getDate(),sender:sender.trim(),amount:amount,memo:String(extracted.rawMemo||''),memberIds:extracted.memberIds||[]};
+  return {messageId:msg.getId(),transactionId:tx,date:msg.getDate(),sender:sender.trim(),amount:amount,memo:String(extracted.rawMemo||''),memberIds:typeof _mwAdminMemoHints_==='function'?_mwAdminMemoHints_(String(extracted.rawMemo||'')).memberIds:[]};
 }
 function _mwOpsMailCheck_(source,ledger){
   var ss=_mwPrSS_(),tz=ss.getSpreadsheetTimeZone(),day=Utilities.formatDate(source.date,tz,'yyyyMMdd'),dayKey=Utilities.formatDate(source.date,Session.getScriptTimeZone()||tz,'yyyy/MM/dd');
@@ -35,12 +35,15 @@ function _mwOpsMailCheck_(source,ledger){
 }
 function _mwOpsMailQueue_(p){
   var cfg=getSettings();if(!cfg.zelleFrom)throw Error('Configured bank sender is missing');
-  var offset=Math.max(0,parseInt(p.offset,10)||0),days=Math.min(30,Math.max(1,parseInt(p.days,10)||7)),threads=GmailApp.search('from:'+cfg.zelleFrom+' subject:"You received money with Zelle" newer_than:'+days+'d',offset,50),cutoff=Date.now()-days*86400000,ledger=_mwPrLedger_(),rows=[],seen={};
-  threads.forEach(function(thread){thread.getMessages().forEach(function(msg){if(msg.getDate().getTime()<cutoff||seen[msg.getId()])return;seen[msg.getId()]=true;
+  var period=typeof _mwAdminPeriod_==='function'?_mwAdminPeriod_(p):null;if(!period)throw Error('Install the guided admin module for calendar inspection');
+  var offset=Math.max(0,parseInt(p.offset,10)||0),queryStart=new Date(period.start+'T12:00:00Z');queryStart.setUTCDate(queryStart.getUTCDate()-1);
+  var queryEnd=new Date(period.end+'T12:00:00Z');queryEnd.setUTCDate(queryEnd.getUTCDate()+2);
+  var threads=GmailApp.search('from:'+cfg.zelleFrom+' subject:"You received money with Zelle" after:'+queryStart.toISOString().slice(0,10).replace(/-/g,'/')+' before:'+queryEnd.toISOString().slice(0,10).replace(/-/g,'/'),offset,50),ledger=_mwPrLedger_(),rows=[],seen={};
+  threads.forEach(function(thread){thread.getMessages().forEach(function(msg){var day=Utilities.formatDate(msg.getDate(),period.tz,'yyyy-MM-dd');if(day<period.start||day>period.end||seen[msg.getId()])return;seen[msg.getId()]=true;
     try{var source=_mwOpsMailSource_(msg),check=_mwOpsMailCheck_(source,ledger);rows.push({messageId:source.messageId,transactionId:source.transactionId,date:_mwPrDate_(source.date),sender:source.sender,amount:source.amount,memo:source.memo,memberIds:source.memberIds,check:check});}
     catch(err){rows.push({messageId:msg.getId(),date:_mwPrDate_(msg.getDate()),error:err.message});}
   });});rows.sort(function(a,b){return b.date.localeCompare(a.date);});
-  return {status:'ok',messages:rows,offset:offset,nextOffset:threads.length===50?offset+50:null,days:days,message:'Read-only bank email review. No labels, scanner checkpoints or sheets changed. Results cover this page of conversations; use Next for more.'};
+  return {status:'ok',messages:rows,offset:offset,nextOffset:threads.length===50?offset+50:null,period:period,message:'READ ONLY: '+period.start+' through '+period.end+' ('+period.tz+'). No labels, checkpoints or sheets changed. Use Next for remaining conversations.'};
 }
 function _mwOpsStagePlan_(p){
   if(!/^[A-Za-z0-9-]{16,80}$/.test(String(p.requestId||''))||!p.messageId)throw Error('Import request ID and email ID required');
