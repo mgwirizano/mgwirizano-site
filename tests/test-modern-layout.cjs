@@ -1,5 +1,5 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path'),crypto=require('crypto');
-const root=__dirname+'/..',payout=fs.readFileSync(path.join(root,'MW_PayoutDashboard.js'),'utf8');
+const root=path.dirname(__dirname),payout=fs.readFileSync(path.join(root,'MW_PayoutDashboard.js'),'utf8');
 const review=fs.readFileSync(path.join(root,'MW_PaymentReview.js'),'utf8');
 new vm.Script(payout);new vm.Script(review);
 // A deliberately small DOM fixture checks node identity and mounting across refreshes.
@@ -18,7 +18,7 @@ class El{
  setAttribute(k,v){this.attrs[k]=v;}focus(){document.activeElement=this;}
  set innerHTML(value){this.html=value;if(value.includes('mw-work-panels')){
   const left=new El('mw-work-main'),tabs=new El('', ['mw-work-tabs']),panels=new El('mw-work-panels'),side=new El('mw-sidebar');
-  left.append(tabs);['overview','payments','payouts','notices','admin'].forEach(id=>tabs.append(new El('mw-tab-'+id)));left.append(panels);this.append(left);this.append(side);
+  left.append(tabs);['overview','payments','recent','payouts','notices','admin'].forEach(id=>tabs.append(new El('mw-tab-'+id)));left.append(panels);this.append(left);this.append(side);
  }}
 }
 const document={body:new El('body'),getElementById:id=>nodes.get(id)||null,createElement:()=>{creations++;return new El();},querySelector:selector=>selector==='#sec-funds .card-title'?nodes.get('sec-funds').querySelector('.card-title'):null};
