@@ -5,6 +5,7 @@ function _mwPrSS_(){return MWPR_SS || (MWPR_SS=_mwFpSS_());}
 function _mwPrValues_(sheet){var name=sheet.getName();if(!MWPR_READ_CACHE[name])MWPR_READ_CACHE[name]=sheet.getDataRange().getValues();return MWPR_READ_CACHE[name];}
 function _mwPrRoute_(p,actor){
   MWPR_READ_CACHE={}; MWPR_SS=null;
+  if(p.action==='fp_review_source'){var rows=_mwPrLedger_().rows.filter(function(r){return r.row===Number(p.sourceRow);});if(rows.length!==1)throw Error('Payment row not found');return {status:'ok',payment:_mwPrPublicPayment_(rows[0])};}
   if(p.action==='fp_review_feed')return _mwPrFeed_(p);
   if(p.action==='fp_review_profile')return _mwPrProfile_(p.memberId);
   if(p.action==='fp_review_fund')return _mwPrFundView_(p.fundCode);
@@ -40,10 +41,11 @@ function _mwPrLedger_(){
     }
     rows.push({row:header+2+i,memberId:id,rawMemberId:_mwPrText_(r[map.id]),name:_mwPrText_(r[map.name]),amount:r[map.amount],type:type,fund:fund,date:_mwPrDate_(r[map.date]),
       timestamp:r[map.date] instanceof Date?r[map.date].getTime():0,sender:_mwPrText_(r[map.sender]),memo:_mwPrText_(r[map.memo]),status:status,notes:_mwPrText_(r[map.notes]),
-      allocated:allocated,needsReview:reasons.length>0,reasons:reasons,canAllocate:['UNMATCHED','REVIEW','NEEDS REVIEW','AMBIGUOUS','PENDING'].indexOf(status)>=0&&r[map.amount]>0&&!/GUARD/i.test(_mwPrText_(r[map.id])+' '+_mwPrText_(r[map.notes])+' '+_mwPrText_(r[map.memo])),raw:r});
+      emailStatus:_mwPrText_(r[map.email]),emailState:_mwPrEmailState_(r[map.email]),allocated:allocated,needsReview:reasons.length>0,reasons:reasons,canAllocate:['UNMATCHED','REVIEW','NEEDS REVIEW','AMBIGUOUS','PENDING'].indexOf(status)>=0&&r[map.amount]>0&&!/GUARD/i.test(_mwPrText_(r[map.id])+' '+_mwPrText_(r[map.notes])+' '+_mwPrText_(r[map.memo])),raw:r});
   });
   return {sheet:sh,data:data,header:header,map:map,rows:rows};
 }
+function _mwPrEmailState_(value){var text=String(value||'').trim();if(!text)return 'NOT RECORDED';if(/^(NOT SENT|NO)\b/i.test(text))return 'NOT SENT';if(/SENDING/i.test(text))return 'SENDING — VERIFY';if(/FAIL|ERROR/i.test(text))return 'FAILED';if(/QUEUED|PENDING/i.test(text))return 'QUEUED';if(/^(YES|SENT)\b/i.test(text))return 'SENT (RECORDED)';return 'VERIFY STATUS';}
 function _mwPrPublicPayment_(r){var out={};Object.keys(r).forEach(function(k){if(k!=='raw')out[k]=r[k];});return out;}
 function _mwPrFeed_(p){
   var ledger=_mwPrLedger_(),all=ledger.rows.filter(function(r){return !/^registration fee$/i.test(r.type);});
@@ -86,9 +88,9 @@ function _mwPrObligation_(id,code,ledger){
   var assessed=!waived&&(/late fee/i.test(notes)||/^LATE\b/i.test(_mwPrText_(tr[7]))||recorded+trackPaid+applied>base);
   var fee=!exempt&&!waived&&(assessed||(!settled&&expired))?500:0;
   var expected=Math.max(0,base+fee-paid-applied),balance=exempt?0:Math.max(recorded,expected),pendingFee=!assessed&&fee>0;
-  if(paid!==trackPaid)issues.push('PAYMENTS total '+(paid/100)+' differs from TRACK paid '+(trackPaid/100));
-  if(settled&&paid+applied<base)issues.push('TRACK says paid without enough fund-specific payment or applied credit');
-  if(pendingFee)issues.push('$5 late fee is due by deadline policy but has not yet been assessed in TRACK');
+  if(!exempt&&paid!==trackPaid)issues.push('PAYMENTS total '+(paid/100)+' differs from TRACK paid '+(trackPaid/100));
+  if(!exempt&&settled&&paid+applied<base)issues.push('TRACK says paid without enough fund-specific payment or applied credit');
+  if(!exempt&&pendingFee)issues.push('$5 late fee is due by deadline policy but has not yet been assessed in TRACK');
   if(recorded<0||applied<0||trackPaid<0)issues.push('Negative tracker value requires review');
   if(!exempt&&recorded!==expected&&!pendingFee)issues.push('TRACK balance differs from fund-specific allocation');
   var status=exempt?'EXEMPT':issues.some(function(x){return !/^\$5 late fee/.test(x);})?'REVIEW':balance===0?(applied>0&&paid===0?'COVERED BY CREDIT':'PAID'):(paid+applied>0?'PARTIAL':'PENDING');
@@ -103,18 +105,20 @@ function _mwPrProfile_(id){
   var m=_mwPrMember_(id),ledger=_mwPrLedger_(),funds=_mwFpFunds_(),obligations=funds.map(function(f){return _mwPrPublicObligation_(_mwPrObligation_(m.id,f.code,ledger));});
   var payments=ledger.rows.filter(function(r){return r.memberId===m.id&&!/^registration fee$/i.test(r.type);}).sort(function(a,b){return b.timestamp-a.timestamp||b.row-a.row;});
   var family={father:_mwPrText_(m.raw[7]),mother:_mwPrText_(m.raw[8]),spouse:_mwPrText_(m.raw[9]),children:_mwPrText_(m.raw[10]),siblings:_mwPrText_(m.raw[11])};
+  var adminStatus=typeof _mwAdminProfile_==='function'?_mwAdminProfile_(m,ledger,obligations):null;
   var claimProfile=typeof _mwClaimProfile_==='function'?_mwClaimProfile_(m.id,family):{claimedFunds:[],beneficiaries:[],claimWarnings:['Claim history module is not installed; previous claims cannot be verified.'],claimPolicyNote:'Claim history is not available.'};
   return {status:'ok',memberId:m.id,name:_mwPrText_(m.raw[2]),email:_mwPrText_(m.raw[1]),phone:_mwPrText_(m.raw[3]),location:_mwPrText_(m.raw[4]),
-    joined:_mwPrDate_(m.raw[0]),availableCredit:_mwFpMoney_(m.raw[18])/100,obligations:obligations,payments:payments.map(_mwPrPublicPayment_),
+    joined:_mwPrDate_(m.raw[0]),emergencyContact:_mwPrText_(m.raw[12]),adminStatus:adminStatus,availableCredit:_mwFpMoney_(m.raw[18])/100,obligations:obligations,payments:payments.map(_mwPrPublicPayment_),
     issues:obligations.filter(function(o){return o.issues.length;}).map(function(o){return o.fundCode+': '+o.issues.join('; ');}),
     family:family,claimedFunds:claimProfile.claimedFunds,beneficiaries:claimProfile.beneficiaries,claimWarnings:claimProfile.claimWarnings,claimPolicyNote:claimProfile.claimPolicyNote};
 }
 function _mwPrFundView_(code){
   MWPR_READ_CACHE={};
   var fund=_mwFpFund_(code),ledger=_mwPrLedger_(),sh=_mwPrSS_().getSheetByName('TRACK-'+code.slice(-3));if(!sh)throw Error('TRACK missing');
-  var ids=sh.getDataRange().getValues().slice(7).map(function(r){return _mwPrId_(r[0]);}).filter(Boolean);
-  var rows=ids.map(function(id){var o=_mwPrPublicObligation_(_mwPrObligation_(id,code,ledger));var m=_mwPrMember_(id);o.memberId=id;o.name=_mwPrText_(m.raw[2]);return o;});
-  return {status:'ok',fund:fund,members:rows};
+  var tracked=sh.getDataRange().getValues().slice(7),ids=tracked.map(function(r){return _mwPrId_(r[0]);}).filter(function(id,i,a){return id&&a.indexOf(id)===i;});
+  var rows=ids.map(function(id){var o=_mwPrPublicObligation_(_mwPrObligation_(id,code,ledger));o.memberId=id;try{var m=_mwPrMember_(id);o.name=_mwPrText_(m.raw[2]);}catch(_){o.name=_mwPrText_((tracked.filter(function(r){return _mwPrId_(r[0])===id;})[0]||[])[1])||id;o.formerMember=true;}return o;});
+  var confirmed=ledger.rows.filter(function(r){return r.fund===code&&r.allocated&&/^funeral contribution$/i.test(r.type);}).reduce(function(a,r){return a+Math.round(r.amount*100);},0)/100;
+  return {status:'ok',fund:fund,members:rows,stats:{rows:rows.length,paid:rows.filter(function(r){return /^(PAID|COVERED BY CREDIT)$/.test(r.status);}).length,unpaid:rows.filter(function(r){return r.status!=='EXEMPT'&&r.balance>0;}).length,review:rows.filter(function(r){return r.status==='REVIEW';}).length,exempt:rows.filter(function(r){return r.status==='EXEMPT';}).length,confirmedCash:confirmed,outstanding:Math.round(rows.filter(function(r){return r.status!=='EXEMPT';}).reduce(function(a,r){return a+Number(r.balance||0);},0)*100)/100}};
 }
 
 // Journaled writes: one approved request at a time; old/new values verified.
@@ -215,7 +219,7 @@ function _mwPrExecute_(plan){
   if(!_mwPrReceipt_(plan.requestId))audit.getRange(audit.getLastRow()+1,1,1,6).setValues([[plan.requestId,new Date(),plan.actor,plan.input.mode,_mwFpHash_(plan.input),JSON.stringify(plan.allocations)]]);
   if(!_mwPrReceipt_(plan.requestId))throw Error('Audit receipt could not be verified. Resume same request.');
   // Colors are display only; all amounts have already been verified.
-  plan.operations.filter(function(o){return /^TRACK-/.test(o.sheet)&&o.col===4;}).forEach(function(o){var status=String(_mwPrUnpack_(o.after)[0][4]);try{ss.getSheetByName(o.sheet).getRange(o.row,8).setFontColor(/^(PAID|COVERED)/.test(status)?'#217B31':'#D68B0C').setBackground(/^(PAID|COVERED)/.test(status)?'#eaf5ed':'#fff8e1');}catch(_) {}});
+  plan.operations.filter(function(o){return /^TRACK-/.test(o.sheet)&&(o.col===4||o.col===8);}).forEach(function(o){var status=String(_mwPrUnpack_(o.after)[0][o.col===8?0:4]);try{ss.getSheetByName(o.sheet).getRange(o.row,8).setFontColor(/^(PAID|COVERED)/.test(status)?'#217B31':'#D68B0C').setBackground(/^(PAID|COVERED)/.test(status)?'#eaf5ed':'#fff8e1');}catch(_) {}});
   var props=PropertiesService.getScriptProperties(),count=Number(props.getProperty('MWPR_PART_COUNT'));props.deleteProperty('MWPR_PENDING');for(var i=0;i<count;i++)props.deleteProperty('MWPR_PART_'+i);props.deleteProperty('MWPR_PART_COUNT');
   return {status:'ok',requestId:plan.requestId,message:'Approved request completed and audited.',allocations:plan.allocations};
 }
