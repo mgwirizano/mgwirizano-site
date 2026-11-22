@@ -19,7 +19,8 @@ function mwPayoutDashboardDispatch(e) {
     var writes = ['fp_save','fp_review_apply','fp_review_resume'].indexOf(p.action) >= 0;
     // Check notification configuration before beginning a financial write.
     if (writes) _mwFpNotificationConfig_();
-    if (/^fp_ops_/.test(p.action)) result = _mwOpsRoute_(p,actor);
+    if (/^fp_admin_/.test(p.action)) result = _mwAdminRoute_(p);
+    else if (/^fp_ops_/.test(p.action)) result = _mwOpsRoute_(p,actor);
     else if (/^fp_review_/.test(p.action)) result = _mwPrRoute_(p,actor);
     else if (p.action === 'fp_funds') result = {status:'ok', funds:_mwFpFunds_()};
     else if (p.action === 'fp_balance') result = getFundBalanceForDashboard(p);
@@ -31,6 +32,7 @@ function mwPayoutDashboardDispatch(e) {
       result.notification = notice;
       result.message += ' ' + notice.message;
     }
+    if(result.status==='ok'&&!result.alreadyRecorded&&['fp_save','fp_review_apply','fp_review_resume','fp_ops_stage_apply','fp_ops_notice_send','fp_admin_apply'].indexOf(p.action)>=0&&typeof _mwAdminLog_==='function'){try{_mwAdminLog_(p.action,p.requestId,result,p.task);}catch(logError){result.message=(result.message||'Action saved.')+' Activity logging needs review: '+logError.message;}}
   } catch (err) { result = {status:'error', message:err.message}; }
   return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
 }
