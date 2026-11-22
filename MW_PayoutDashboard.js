@@ -11,8 +11,9 @@ function fpInvalidate(){fpPreview=null;const b=document.getElementById('fp-save-
 async function fpCall(action,params={}){
   const response=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({...params,action}),redirect:'follow'});
   const data=await response.json();
-  if(data.status!=='ok')throw Error(data.message||'Could not reach the payout service.');
+  if(data.status!=='ok')throw Error(/Unknown payout action/i.test(data.message||'')?'Unknown payout action — the deployed Apps Script is older than the website. Replace the updated addon scripts, including MW_Dashboard_Payouts and MW_Dashboard_Admin, then deploy a new version of the SAME web app.':(data.message||'Could not reach the payout service.'));
   if(action==='fp_funds'&&!Array.isArray(data.funds))throw Error('Install the payout backend and POST dispatch line, then redeploy Apps Script.');
+  if(['fp_save','fp_review_apply','fp_review_resume','fp_admin_apply','fp_ops_stage_apply','fp_ops_notice_send'].includes(action)&&typeof mwMemberCache!=='undefined')mwMemberCache.clear();
   return data;
 }
 async function fpLoadFunds(){
@@ -20,7 +21,7 @@ async function fpLoadFunds(){
   try{
     const d=await fpCall('fp_funds'),sel=document.getElementById('fp-fund'),current=sel.value;
     sel.replaceChildren(new Option('No fund / organization payment',''));
-    fpFundDetails=d.funds;fpDecorateFundCards();
+    d.funds=d.funds.map(f=>({...f,recordedStatus:f.recordedStatus||f.status,status:fpCollectionState(f)}));fpFundDetails=d.funds;fpDecorateFundCards();
     d.funds.forEach(f=>sel.add(new Option(`${f.code} — ${f.deceased} (${f.status})`,f.code)));
     if(current)sel.value=current;
     fpStatus('Select a fund to view its balance. No records changed.');
@@ -101,11 +102,13 @@ function fpPrettyDue(value){
 }
 // Enrich existing fund cards without replacing their totals or controls.
 function fpDecorateFundCards(){
+  fpUpdateActiveFundCounts();
   document.querySelectorAll('#sec-funds .fund-item').forEach(card=>{
     const title=card.querySelector('.fund-name'),code=title?.textContent.match(/FUND-\d{3}/)?.[0];
     const fund=fpFundDetails.find(f=>f.code===code);if(!fund)return;
     let detail=card.querySelector('.fp-fund-details');
     if(!detail){detail=document.createElement('div');detail.className='fp-fund-details';detail.style.cssText='font-size:13px;color:var(--text2);margin:6px 0 10px;line-height:1.6;white-space:pre-line';title.after(detail);}
+    const badge=card.querySelector('.fund-badge');if(badge){const state=fpCollectionState(fund);if(badge.textContent!==state)badge.textContent=state;badge.classList.toggle('mw-fund-closed',state==='CLOSED');}
     const label=(fund.beneficiaryName||'Name not recorded')+(fund.bereaved?' ('+fund.bereaved+')':'');
     const member=fund.bereaved&&typeof prProfileButton==='function'?prProfileButton(fund.bereaved,label):fpEscape(label);
     const html='Due date: '+fpEscape(fpPrettyDue(fund.deadline))+'<br>Claiming member: '+member;
@@ -179,3 +182,6 @@ function mwArrangeWorkspace(){
   new MutationObserver(mount).observe(document.getElementById('main-content'),{childList:true,subtree:true});
   mount();
 })();
+
+function fpCollectionState(fund,today){today=today||new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());return fund.status==='ACTIVE'&&/^\d{4}-\d{2}-\d{2}$/.test(fund.deadline||'')&&fund.deadline<today?'CLOSED':fund.status;}
+function fpUpdateActiveFundCounts(){if(!fpFundDetails.length)return;const active=fpFundDetails.filter(f=>fpCollectionState(f)==='ACTIVE');document.querySelectorAll('#sec-overview .stat-card').forEach(card=>{const label=card.querySelector('.stat-label');if(label?.textContent.trim().toLowerCase()==='active funds'){const value=card.querySelector('.stat-value'),sub=card.querySelector('.stat-sub');if(value&&value.textContent!==String(active.length))value.textContent=String(active.length);const text=active.map(f=>f.code).join(' · ')||'No funds within their collection window';if(sub&&sub.textContent!==text)sub.textContent=text;}if(label?.textContent.trim().toLowerCase()==='breakdown'){const sub=card.querySelector('.stat-sub'),text=active.length+' active fund'+(active.length===1?'':'s');if(sub&&sub.textContent!==text)sub.textContent=text;}});}
