@@ -1,0 +1,14 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),{setup}=require('./test-payment-review.cjs');
+const e=setup();vm.runInContext(fs.readFileSync((fs.existsSync(__dirname+'/MW_Dashboard_Claims.gs')?__dirname:__dirname+'/..')+'/MW_Dashboard_Claims.gs','utf8'),e.c);
+e.data.MEMBERS[1][8]='Irene Mtileni';e.data.MEMBERS[1][10]='Alice Jones; Beth Jones';e.data.MEMBERS[1][11]='Chris Munthali';
+e.data.FUNDS[1][2]='Mrs. Irene Mtileni';e.data.FUNDS[1][3]=new Date('2026-11-02T18:00:00Z');e.data.FUNDS[1][10]='Mother';e.data.FUNDS[1][11]='MW0083';
+e.data.FUNDS[2][2]='Alice Jones';e.data.FUNDS[2][10]='Child';e.data.FUNDS[2][11]='MW0083';
+e.data.FUNDS[3][2]='Chris Munthali';e.data.FUNDS[3][10]='Sibling';e.data.FUNDS[3][11]='MW0100';
+let profile=e.c._mwPrProfile_('MW0083');assert.equal(e.writes(),0);assert.equal(profile.claimedFunds.length,2);
+let mother=profile.beneficiaries.find(b=>b.relationship==='mother');assert.equal(mother.status,'PREVIOUSLY_CLAIMED');assert.equal(mother.canClaimAgain,false);assert.equal(mother.claims[0].fundCode,'FUND-009');assert.equal(mother.claims[0].fundOpenedDate,'2026-11-02');
+assert.equal(profile.beneficiaries.find(b=>b.name==='Alice Jones').status,'PREVIOUSLY_CLAIMED');assert.equal(profile.beneficiaries.find(b=>b.name==='Beth Jones').status,'NO_PRIOR_CLAIM_FOUND');assert.equal(profile.beneficiaries.find(b=>b.name==='Beth Jones').canClaimAgain,null);
+assert.equal(profile.beneficiaries.find(b=>b.name==='Chris Munthali').status,'REVIEW');assert.equal(profile.beneficiaries.find(b=>b.name==='Chris Munthali').possibleClaims[0].memberId,'MW0100');
+e.data.MEMBERS[1][8]='Irene Otherperson';profile=e.c._mwPrProfile_('MW0083');assert.equal(profile.beneficiaries.find(b=>b.relationship==='mother').status,'REVIEW');
+e.data.MEMBERS[1][8]='Irene';profile=e.c._mwPrProfile_('MW0083');assert.notEqual(profile.beneficiaries.find(b=>b.relationship==='mother').status,'PREVIOUSLY_CLAIMED');
+e.data.MEMBERS[1][8]='Irene Mtileni';e.data.FUNDS[1][8]='CANCELLED';profile=e.c._mwPrProfile_('MW0083');assert.notEqual(profile.beneficiaries.find(b=>b.relationship==='mother').status,'PREVIOUSLY_CLAIMED');assert.equal(profile.claimedFunds.length,2);assert.equal(e.writes(),0);
+console.log('PASS: clicking-name profile data includes read-only claim history; full-name/member/relationship links; claim date sourced from fund opening; claimed beneficiary not qualified; separate children retained; cross-member and abbreviated names held for identity review; cancelled funds not treated as completed claim; no prior claim is not automatic eligibility; no sheet writes.');
