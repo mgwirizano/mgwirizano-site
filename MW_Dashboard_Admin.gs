@@ -65,6 +65,8 @@ function _mwAdminPlan_(p){
  }else if(input.task==='STATEMENT'){
   var ids=_mwAdminIds_(input);if(ids.length!==1)throw Error('Select one member. Family members receive separate private statements.');
   details={statement:_mwAdminStatement_(ids[0])};summary='Send one balance and owing-history statement to '+details.statement.email+'. No balances, fees or allocations change.';snapshot={memberId:ids[0],profile:_mwPrProfile_(ids[0])};
+ }else if(input.task==='BALANCE_REMINDERS'){
+  var ids=_mwAdminIds_(input);details={statements:ids.map(function(id){return _mwAdminStatement_(id);})};summary='Email '+ids.length+' separate balance statements to the selected members. No shared recipient list, fees or payment changes.';snapshot={profiles:ids.map(function(id){return _mwPrProfile_(id);})};
  }else if(input.task==='REMINDERS'){
   if(typeof _crBuildMemberEmail_!=='function'||typeof _crBuildPlainText_!=='function')throw Error('Install your supplied consolidated reminder script first');
   var ids=_mwAdminIds_(input),ledger=_mwPrLedger_(),funds=_mwFpFunds_(),cfg=getSettings(),today=Utilities.formatDate(new Date(),ss.getSpreadsheetTimeZone(),'yyyy-MM-dd'),prior=ss.getSheetByName('REMINDER LOG'),sent={};
@@ -123,6 +125,8 @@ function _mwAdminApply_(p){
    result={removedTrackRows:targets.length,heldHistoricalRows:plan.details.held.length};
   }else if(task==='STATEMENT'){
    var statement=plan.details.statement;result={memberId:statement.memberId,generatedAt:statement.generatedAt,email:_mwAdminEmail_(statement.email,statement.subject,statement.text)};
+  }else if(task==='BALANCE_REMINDERS'){
+   result={emails:plan.details.statements.map(function(m){return {memberId:m.memberId,email:_mwAdminEmail_(m.email,'Requested balance reminder — '+m.memberId,m.text)};})};
   }else if(task==='REMINDERS'){
    var log=ss.getSheetByName('REMINDER LOG');if(!log){log=ss.insertSheet('REMINDER LOG');log.getRange(1,1,1,14).setValues([['Sent At','Run ID','Member ID','Member Name','Email','Fund','Fund Name','Deceased','Contribution Due','Late Fee','Fund Total Due','Email Total Due','Subject','Status']]);}
    result={emails:[]};plan.details.messages.forEach(function(m){var g=m.group,first=log.getLastRow()+1,logs=g.items.map(function(x){return [new Date(),plan.input.requestId,g.id,g.name,g.email,x.fund,x.fundName,x.deceased,x.contributionDue,x.lateFee,x.totalDue,g.totalDue,m.subject,'SENDING'];});log.getRange(first,1,logs.length,14).setValues(logs);SpreadsheetApp.flush();var mail=_mwAdminEmail_(g.email,m.subject,m.text,m.html);log.getRange(first,14,logs.length,1).setValues(logs.map(function(){return [mail.status==='SENT'?'ACCEPTED FOR DELIVERY':'UNCERTAIN'];}));result.emails.push({memberId:g.id,status:mail.status});});
@@ -181,11 +185,11 @@ function _mwAdminLog_(action,requestId,result,task){
 function _mwAdminOverview_(){
  var ss=_mwPrSS_(),ledger=_mwPrLedger_(),members=_mwPrValues_(ss.getSheetByName('MEMBERS')).filter(function(r){return !!_mwPrId_(r[16]);}),ids={},credits=0;members.forEach(function(r){ids[_mwPrId_(r[16])]=true;if(typeof r[18]==='number')credits+=Math.round(r[18]*100);});
  var days={},tz=ss.getSpreadsheetTimeZone(),today=Utilities.formatDate(new Date(),tz,'yyyy-MM-dd');for(var i=6;i>=0;i--){var day=new Date(today+'T12:00:00Z');day.setUTCDate(day.getUTCDate()-i);days[day.toISOString().slice(0,10)]=0;}
- var byFund={},cash=0,sent=0,notSent=0;ledger.rows.forEach(function(r){if(!r.allocated||!/^funeral contribution$/i.test(r.type))return;var cents=Math.round(r.amount*100);cash+=cents;byFund[r.fund]=(byFund[r.fund]||0)+cents;var day=r.raw[ledger.map.date] instanceof Date?Utilities.formatDate(r.raw[ledger.map.date],tz,'yyyy-MM-dd'):'';if(days[day]!==undefined)days[day]+=cents;if(r.emailState==='SENT (RECORDED)')sent++;else notSent++;});
+ var monthly={};for(var monthIndex=11;monthIndex>=0;monthIndex--){var dt=new Date(today.slice(0,7)+'-15T12:00:00Z');dt.setUTCMonth(dt.getUTCMonth()-monthIndex);monthly[dt.toISOString().slice(0,7)]=0;}var byFund={},cash=0,sent=0,notSent=0;ledger.rows.forEach(function(r){if(!r.allocated||!/^funeral contribution$/i.test(r.type))return;var cents=Math.round(r.amount*100);cash+=cents;byFund[r.fund]=(byFund[r.fund]||0)+cents;var day=r.raw[ledger.map.date] instanceof Date?Utilities.formatDate(r.raw[ledger.map.date],tz,'yyyy-MM-dd'):'';if(days[day]!==undefined)days[day]+=cents;if(monthly[day.slice(0,7)]!==undefined)monthly[day.slice(0,7)]+=cents;if(r.emailState==='SENT (RECORDED)')sent++;else notSent++;});
  var funds=_mwFpFunds_().map(function(f){return {code:f.code,deceased:f.deceased,status:f.status,deadline:f.deadline,collected:(byFund[f.code]||0)/100};});
  var activity=ss.getSheetByName('MW_DASHBOARD_ACTIVITY'),events=activity?activity.getDataRange().getValues().slice(1).sort(function(a,b){return new Date(b[0])-new Date(a[0]);}).slice(0,30).map(function(r){return {at:r[0] instanceof Date?Utilities.formatDate(r[0],tz,'yyyy-MM-dd HH:mm:ss'):String(r[0]),origin:String(r[1]),action:String(r[2]),outcome:String(r[3]),requestId:String(r[4]),summary:String(r[5])};}):[];
  return {status:'ok',generatedAt:Utilities.formatDate(new Date(),tz,'yyyy-MM-dd HH:mm:ss'),members:members.length,confirmedFuneralCash:cash/100,availableCredit:credits/100,needsReview:ledger.rows.filter(function(r){return r.needsReview&&!/^registration fee$/i.test(r.type);}).length,recordedEmailSent:sent,otherEmailStates:notSent,
-  weeklyTrend:Object.keys(days).map(function(day){return {date:day,amount:days[day]/100};}),funds:funds,activity:events,
+  monthlyTrend:Object.keys(monthly).map(function(month){return {month:month,amount:monthly[month]/100};}),weeklyTrend:Object.keys(days).map(function(day){return {date:day,amount:days[day]/100};}),funds:funds,activity:events,
   note:'Contributions use confirmed fund-specific ledger rows. Available credit is separate and is not added to cash. Activity records confirmed dashboard actions only; no IP/device data or clickstream is collected.'};
 }
 
