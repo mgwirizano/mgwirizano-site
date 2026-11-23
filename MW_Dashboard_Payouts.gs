@@ -19,7 +19,7 @@ function mwPayoutDashboardDispatch(e) {
     var writes = ['fp_save','fp_review_apply','fp_review_resume'].indexOf(p.action) >= 0;
     // Check notification configuration before beginning a financial write.
     if (writes) _mwFpNotificationConfig_();
-    if(p.action==='fp_version')result={status:'ok',version:'2026-11-22.4',reportsAvailable:typeof _mwRptRoute_==='function',actionsAvailable:typeof _mwActRoute_==='function',adminAvailable:typeof _mwAdminRoute_==='function',reviewAvailable:typeof _mwPrRoute_==='function'};
+    if(p.action==='fp_version')result={status:'ok',version:'2026-11-22.4.3',automationAvailable:typeof _mwAutoRun_==='function',reportsAvailable:typeof _mwRptRoute_==='function',actionsAvailable:typeof _mwActRoute_==='function',adminAvailable:typeof _mwAdminRoute_==='function',reviewAvailable:typeof _mwPrRoute_==='function'};
     else if (/^fp_actions_/.test(p.action))result=_mwActRoute_(p);
     else if (/^fp_admin_/.test(p.action)) result = _mwAdminRoute_(p);
     else if (/^fp_ops_/.test(p.action)) result = _mwOpsRoute_(p,actor);
