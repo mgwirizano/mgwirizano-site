@@ -90,3 +90,14 @@ A bare member number such as `No 323` can propose `MW0323` with the member's ful
 A mismatch stays visible; there is no equal/proportional split or automatic excess credit. Multiple member candidates require choosing one, and explicit memo dollar amounts/multiple IDs leave amount fields for manual verification. Ambiguous surname references, unknown funds, missing member candidates and protected/already-posted sources cannot be filled automatically. Paid/exempt obligations are skipped. Inconsistent tracker balances leave the amount blank. Manual edits made while the recheck runs are preserved and require a retry. Filling fields does not post a payment, dismiss the source, or send an email.
 
 For an already-installed v4, replace **MW_Dashboard_Admin.gs**, deploy a new version of the same Apps Script web app, and replace **MW_PaymentReview.js** on the website. All other dashboard styling and report features are retained. For older installations, use the full package installation steps above first.
+
+
+## v4.2: Existing manual-payment hints and contribution-first order
+
+The allocation hint now lists possible already-posted manual payments. It requires exact member/fund context and a nearby payment date (up to seven days), or an existing explicit source-row reference. Matching amount or sender name alone is insufficient. Entries linked to a different source and financial guards are excluded. Candidate matches are still suggestions, not bank-transfer proof.
+
+When the selected candidate set exactly totals the unmatched source with no duplicate member/fund ambiguity, **Review link & dismiss unmatched** fills the existing link workflow. Verify the bank transfer, check the explicit verification box, preview and confirm. It links existing receipts and dismisses the original unresolved source without recording another payment or altering fund totals. Existing receipt-recovery behavior still applies after a confirmed link. Partial/different totals require inspecting/selecting the proven rows manually. No dismissal or email runs from a hint.
+
+Contributions & review and Recent payments precede Registration & members. The registration table is confined to its own workspace and cannot fall back into the contribution section during mounting. Daily-work shortcuts put Zelle and recent payments first. Existing top-card styling and the Overview remain intact.
+
+For an installed v4/v4.1, replace MW_Dashboard_Admin.gs, deploy a new version of the same Apps Script web app, and update both website scripts MW_PaymentReview.js and MW_PayoutDashboard.js. Financial reports and earlier workflows remain included.
