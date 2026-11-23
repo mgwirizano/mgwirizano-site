@@ -1,6 +1,7 @@
-# Mgwirizano dashboard v4.7
+# Mgwirizano dashboard v4.8
 
-**Already on v4.4 or the v4.5/v4.6 website update? Replace MW_PayoutDashboard.js and MW_PaymentReview.js, then hard-refresh. No Apps Script redeployment is needed.** Read docs/NONBLOCKING_HOTFIX.md. Other dashboard/financial features are included.
+**Update two Apps Script files (MW_Dashboard_Operations.gs and MW_Dashboard_Actions.gs), deploy a new version of the same web app, then replace both website scripts and hard-refresh.** This fixes the expensive alert calculation and adds the top Admin workflows button. See docs/ALERTS_AND_ADMIN_UPDATE.md.
+
 
 For a first installation or an older server, read **docs/AUTOMATION_AND_FIXES.md**.
 
