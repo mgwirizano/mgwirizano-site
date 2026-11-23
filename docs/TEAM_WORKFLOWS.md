@@ -82,3 +82,14 @@ The supplied original `onFormSubmit` is not replayed: it assigns a new ID even f
 ## Financial reports
 
 Open Financial reports, choose a view, and set the cash activity dates. Fund performance and fund calculations retain current balances. Click a fund or calculation amount for supporting entries. Use Payouts/refunds/expenses for category and quarterly totals. Member balances supports search, highest-balance/name/overdue sorting, 4+ overdue filtering and warning-review links; no warning is sent from the matrix. Phone users expand a member card. CSV exports all matching rows. Select Board report package and Print / save PDF to include fund explanations, outgoing totals, review notes and the current owing-member matrix. The report is not a bank balance or a reconstructed historical member ledger.
+
+
+## v4.1: Use payment suggestions
+
+The unmatched-payment drawer now shows **Use suggestions & preview** when a verified member/fund proposal exactly matches the received amount. Clicking it re-reads the source and balances, fills the allocation rows and starts the existing read-only dry run. **Confirm and apply** remains the deliberate financial action; the normal audit, stale-preview protection, source dismissal and member receipts are reused.
+
+A bare member number such as `No 323` can propose `MW0323` with the member's full name and an identity-verification label. Explicit `fund 008 to 011` references fill all four verified fund balances, including disclosed applicable late fees. This never copies an old scanner proposal from Notes. When balances total $60 for a $60 source, no typing is needed before preview/confirmation.
+
+A mismatch stays visible; there is no equal/proportional split or automatic excess credit. Multiple member candidates require choosing one, and explicit memo dollar amounts/multiple IDs leave amount fields for manual verification. Ambiguous surname references, unknown funds, missing member candidates and protected/already-posted sources cannot be filled automatically. Paid/exempt obligations are skipped. Inconsistent tracker balances leave the amount blank. Manual edits made while the recheck runs are preserved and require a retry. Filling fields does not post a payment, dismiss the source, or send an email.
+
+For an already-installed v4, replace **MW_Dashboard_Admin.gs**, deploy a new version of the same Apps Script web app, and replace **MW_PaymentReview.js** on the website. All other dashboard styling and report features are retained. For older installations, use the full package installation steps above first.
