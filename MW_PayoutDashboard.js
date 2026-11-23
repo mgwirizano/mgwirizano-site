@@ -9,12 +9,16 @@ function fpMoney(v){return new Intl.NumberFormat('en-US',{style:'currency',curre
 function fpStatus(message,error){const el=document.getElementById('fp-status');if(el){el.textContent=message;el.className=error?'fp-error':'';}}
 function fpInvalidate(){fpPreview=null;const b=document.getElementById('fp-save-btn');if(b)b.disabled=true;const el=document.getElementById('fp-preview');if(el)el.textContent='';}
 async function fpCall(action,params={}){
+  const progress=typeof mwRequestFeedbackBegin==='function'?mwRequestFeedbackBegin(action,params):null;
+  try{
   const response=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({...params,action}),redirect:'follow'});
   const data=await response.json();
-  if(data.status!=='ok')throw Error(/Unknown payout action/i.test(data.message||'')?'Unknown payout action — the deployed Apps Script is older than the website. Replace the updated addon scripts, including MW_Dashboard_Payouts and MW_Dashboard_Admin, then deploy a new version of the SAME web app.':(data.message||'Could not reach the payout service.'));
+  if(data.status!=='ok'){const rejected=Error(/Unknown payout action/i.test(data.message||'')?'Unknown payout action — the deployed Apps Script is older than the website. Replace the updated addon scripts, including MW_Dashboard_Payouts and MW_Dashboard_Admin, then deploy a new version of the SAME web app.':(data.message||'Could not reach the payout service.'));rejected.serverRejected=true;throw rejected;}
   if(action==='fp_funds'&&!Array.isArray(data.funds))throw Error('Install the payout backend and POST dispatch line, then redeploy Apps Script.');
   if(['fp_save','fp_review_apply','fp_review_resume','fp_admin_apply','fp_ops_stage_apply','fp_ops_notice_send'].includes(action)&&typeof mwMemberCache!=='undefined')mwMemberCache.clear();
+  if(typeof mwRequestFeedbackEnd==='function')mwRequestFeedbackEnd(progress,data);
   return data;
+  }catch(error){if(typeof mwRequestFeedbackEnd==='function')mwRequestFeedbackEnd(progress,null,error);throw error;}
 }
 async function fpLoadFunds(){
   if(fpBusy)return;fpBusy=true;ftBusy=true;fpStatus('Loading funds…');
