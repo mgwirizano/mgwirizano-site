@@ -156,6 +156,9 @@ function mwArrangeWorkspace(){
  const left=document.getElementById('mw-work-main'),panels=document.getElementById('mw-work-panels'),side=document.getElementById('mw-sidebar');
  const lookup=document.getElementById('lookup-input')?.closest('.card');if(lookup&&lookup.parentNode!==left)left.prepend(lookup);
  ['sec-dashboard-overview','sec-payment-review','sec-recent-payments','sec-registration-members','sec-financial-reports','sec-family-payouts','sec-notice-review','sec-admin-workflows'].forEach(id=>{const el=document.getElementById(id);if(el&&el.parentNode!==panels){panels.append(el);el.setAttribute('role','tabpanel');el.setAttribute('aria-labelledby',id==='sec-dashboard-overview'?'mw-tab-overview':id==='sec-payment-review'?'mw-tab-payments':id==='sec-recent-payments'?'mw-tab-recent':id==='sec-registration-members'?'mw-tab-registration':id==='sec-financial-reports'?'mw-tab-reports':id==='sec-notice-review'?'mw-tab-notices':id==='sec-admin-workflows'?'mw-tab-admin':'mw-tab-payouts');}});
+ // Preserve contribution-first ordering even when existing panels are remounted.
+ const contributionPanel=document.getElementById('sec-payment-review'),registrationPanel=document.getElementById('sec-registration-members');
+ if(contributionPanel&&registrationPanel&&contributionPanel.parentNode===registrationPanel.parentNode&&typeof contributionPanel.compareDocumentPosition==='function'&&(contributionPanel.compareDocumentPosition(registrationPanel)&2))registrationPanel.before(contributionPanel);
  const right=legacy.querySelector('.right-col');if(right&&right.parentNode!==side)side.append(right);
  // Remove registration-focused cards from the sidebar, preserving their original nodes.
  side.querySelectorAll('.card-title').forEach(title=>{if(['Priority pulse','Eligibility status'].includes(title.textContent.trim()))title.closest('.card').style.display='none';});
