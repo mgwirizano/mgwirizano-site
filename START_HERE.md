@@ -1,4 +1,4 @@
-# Mgwirizano dashboard v4.3
+# Mgwirizano dashboard v4.4
 
 Read **docs/AUTOMATION_AND_FIXES.md** first.
 
