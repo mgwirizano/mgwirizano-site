@@ -1,6 +1,6 @@
-See [AUTOMATION_AND_FIXES.md](AUTOMATION_AND_FIXES.md) for v4.3 setup, running/report feedback and the optional follow-up assistant.
+See [AUTOMATION_AND_FIXES.md](AUTOMATION_AND_FIXES.md) for v4.4 setup, running/report feedback and the optional follow-up assistant.
 
-# Dashboard interactive operations update — v4.3
+# Dashboard interactive operations update — v4.4
 
 1. In the same Apps Script project, replace all eight addon files with the supplied versions: `MW_Dashboard_Payouts`, `MW_Dashboard_PaymentReview`, `MW_Dashboard_Operations`, `MW_Dashboard_Claims`, `MW_Dashboard_Admin` `MW_Dashboard_Actions` `MW_Dashboard_Reports` and the new `MW_Dashboard_Automation`. Add any of these files that are missing. Do not paste these inside another function. Keep the existing `doPost` dispatch hook once; do not add another `doGet` or replace the main bridge.
 2. Replace the two website files `MW_PayoutDashboard.js` and `MW_PaymentReview.js`. Keep each existing script tag once. The included patches show the hooks only if they have never been installed.
