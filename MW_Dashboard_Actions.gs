@@ -44,8 +44,11 @@ function _mwActAutoReceipts_(plan){
 }
 function _mwActPlan_(input){
  var ss=_mwPrSS_(),details={},snapshot={},summary='';
+ if(/^AUTOMATION_/.test(input.task))return _mwAutoPlan_(input);
+ if(input.task==='ZELLE_REVIEW_EMAIL')return _mwOpsZelleEmailPlan_(input);
  if(input.task==='REGISTRATION_WINDOW')return _mwActWindowPlan_(input);
  if(input.task==='RECOVER_REGISTRATIONS')return _mwActRecoverPlan_(input);
+ if(input.task==='LEGACY_REPORT'){var pending=input.reportType==='PENDING';if(pending&&typeof generatePendingReportForDashboard!=='function')throw Error('The existing generatePendingReportForDashboard report bridge is required');if(!pending&&typeof generateFundReportForDashboard!=='function')throw Error('The existing generateFundReportForDashboard bridge is required');var fund=pending?null:_mwFpFund_(input.fundCode);return {details:{legacyReport:pending?'PENDING_ALL':'FULL_FUND',fundCode:fund?fund.code:'',recipient:getSettings().leaderEmail},snapshot:{fund:fund,recipient:getSettings().leaderEmail},summary:'Generate your existing '+(pending?'all-funds pending-only report':fund.code+' full status report')+' and email it to '+getSettings().leaderEmail+'. No financial balances change.'};}
  if(input.task==='WELCOME_RESEND')return _mwActWelcomePlan_(input);
  if(input.task==='RESEND_RECEIPT'){
   var d=_mwActPayment_(input.paymentRow),r=d.row;if(r.emailState==='SENT (RECORDED)')throw Error('This receipt is already recorded sent. Check sent mail instead of duplicating it.');if(!/^NOT SENT$|^FAILED$/.test(r.emailState)&&!input.verifiedNotSent)throw Error('Check sent mail and confirm the receipt was not sent before recovering an uncertain status');
@@ -82,8 +85,11 @@ function _mwActPlan_(input){
 }
 function _mwActApply_(plan){
  var d=plan.details,task=plan.input.task,ss=_mwPrSS_();
+ if(/^AUTOMATION_/.test(task))return _mwAutoApply_(plan);
+ if(task==='ZELLE_REVIEW_EMAIL')return {notification:_mwAdminEmail_(d.email.recipient,d.email.subject,d.email.text,d.email.html),scope:d.scope};
  if(task==='REGISTRATION_WINDOW'){PropertiesService.getScriptProperties().setProperty('MW_REGISTRATION_WINDOW',JSON.stringify(d.window));return {window:d.window,message:'Registration alert window saved. Registration itself was not opened or closed.'};}
  if(task==='RECOVER_REGISTRATIONS')return _mwActRecoverApply_(plan);
+ if(task==='LEGACY_REPORT'){var legacy=d.legacyReport==='PENDING_ALL'?generatePendingReportForDashboard({}):generateFundReportForDashboard({fundCode:d.fundCode});if(!legacy||legacy.status!=='ok')throw Error(legacy&&legacy.message||'Report outcome was not confirmed; inspect sent mail before retrying');return {legacyReport:d.legacyReport,message:legacy.message||'Existing report generator completed',notification:{status:'ACCEPTED BY EXISTING REPORT HELPER',recipient:d.recipient},data:legacy};}
  if(task==='WELCOME_RESEND')return _mwActSendWelcomes_(plan);
  if(task==='RESEND_RECEIPT')return {receipt:_mwActSendReceipt_(plan.input.paymentRow,plan.input.requestId,plan.input.verifiedNotSent)};
  if(task==='REVERSE_PAYMENT'||task==='LINK_EXISTING'){
