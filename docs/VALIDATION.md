@@ -1,6 +1,6 @@
-# Validation — v4.4
+# Validation — UI v4.5
 
-18 synthetic test files passed, including all-fund Inspect and stale credit-suggestion protection. Eight Apps Script addons and both website scripts parse.
+19 synthetic test files passed, including all-fund Inspect and stale credit-suggestion protection. Eight Apps Script addons and both website scripts parse.
 
 - test-actions.cjs: PASS
 - test-admin.cjs: PASS
@@ -22,3 +22,5 @@
 - test-zelle-check.cjs: PASS
 
 No production records, member emails, bank scans, trigger installations or removals ran. Live browser layout and Gmail delivery require an installation check.
+
+- test-compact-feedback.cjs: PASS — callouts-only default, full details retained, six-second success timeout, hover/focus pause, persistent warnings and running-operation protection.
