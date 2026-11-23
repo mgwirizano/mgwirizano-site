@@ -1,9 +1,10 @@
-# Validation — nonblocking website v4.7
+# Validation — v4.8
 
-21 synthetic test files passed. Website scripts parse. Financial backend code remains compatible with v4.4.
+22 synthetic test files passed. Alert calculations are compared with the pre-optimization implementation using 40 sent notices: identical decisions, ledger rebuilds 42 → 1, formula reads 3 → 0. Existing layout/navigation checks pass.
 
 - test-actions.cjs: PASS
 - test-admin.cjs: PASS
+- test-alert-performance.cjs: PASS
 - test-automation.cjs: PASS
 - test-claims.cjs: PASS
 - test-compact-feedback.cjs: PASS
@@ -24,4 +25,4 @@
 - test-suggestions.cjs: PASS
 - test-zelle-check.cjs: PASS
 
-Tests specifically verify no section-wide locks or generic process popups for reads, read deadline cleanup, no abort/replay of uncertain writes, bounded status polling and preserved payment/report duplicate protection. No production records, emails, bank scans, triggers or deployment were changed. Live server execution time was not measured.
+No live deployment, financial edits, emails, bank scans, triggers or removals ran. Synthetic work counts are not live timing measurements.
