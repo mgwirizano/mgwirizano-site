@@ -1,6 +1,8 @@
-# Mgwirizano dashboard v4.4
+# Mgwirizano dashboard v4.5
 
-Read **docs/AUTOMATION_AND_FIXES.md** first.
+**Already on v4.4? Replace only MW_PaymentReview.js on the website and hard-refresh. No Apps Script redeployment is needed for this UI update.** Read docs/COMPACT_UI_UPDATE.md.
+
+For a first installation or an older server, read **docs/AUTOMATION_AND_FIXES.md**.
 
 This is the complete addon update: eight Apps Script files and two website scripts, including Financial reports, running/completion messages, repeated-report protection, smarter group allocations, Zelle checks and the optional member-response/payment-follow-up assistant.
 
