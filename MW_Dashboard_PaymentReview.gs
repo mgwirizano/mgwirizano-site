@@ -5,7 +5,7 @@ function _mwPrSS_(){return MWPR_SS || (MWPR_SS=_mwFpSS_());}
 function _mwPrValues_(sheet){var name=sheet.getName();if(!MWPR_READ_CACHE[name])MWPR_READ_CACHE[name]=sheet.getDataRange().getValues();return MWPR_READ_CACHE[name];}
 function _mwPrRoute_(p,actor){
   MWPR_READ_CACHE={}; MWPR_SS=null;
-  if(p.action==='fp_review_source'){var rows=_mwPrLedger_().rows.filter(function(r){return r.row===Number(p.sourceRow);});if(rows.length!==1)throw Error('Payment row not found');return {status:'ok',payment:_mwPrPublicPayment_(rows[0])};}
+  if(p.action==='fp_review_source'){var rows=_mwPrLedger_().rows.filter(function(r){return r.row===Number(p.sourceRow);});if(rows.length!==1)throw Error('Payment row not found');var inspection=null;try{if(typeof _mwAdminSuggest_==='function')inspection=_mwAdminSuggest_({sourceRow:Number(p.sourceRow)});}catch(err){inspection={status:'unavailable',message:'Account inspection needs review: '+err.message};}return {status:'ok',payment:_mwPrPublicPayment_(rows[0]),inspection:inspection};}
   if(p.action==='fp_review_export')return _mwPrFeed_(p);
   if(p.action==='fp_review_feed')return _mwPrFeed_(p);
   if(p.action==='fp_review_claims'){var member=_mwPrMember_(p.memberId),family={father:_mwPrText_(member.raw[7]),mother:_mwPrText_(member.raw[8]),spouse:_mwPrText_(member.raw[9]),children:_mwPrText_(member.raw[10]),siblings:_mwPrText_(member.raw[11])};if(typeof _mwClaimProfile_!=='function')throw Error('Claim history addon is missing. Install MW_Dashboard_Claims and redeploy the same web app.');var claims=_mwClaimProfile_(member.id,family);claims.status='ok';claims.family=family;return claims;}
