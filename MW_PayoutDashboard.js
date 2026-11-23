@@ -151,7 +151,10 @@ function mwSetTheme(theme){
  const button=document.getElementById('mw-theme-toggle');if(button){button.textContent=light?'Dark mode':'Light mode';button.setAttribute('aria-pressed',String(light));}
 }
 function mwToggleTheme(){mwSetTheme(document.body.classList.contains('mw-light')?'dark':'light');}
+function mwOpenAdminWorkflows(){mwSelectWorkspace('admin');if(typeof mwAdminPrepare==='function')mwAdminPrepare();document.getElementById('sec-admin-workflows')?.scrollIntoView({block:'start',behavior:'smooth'});document.getElementById('mw-admin-task')?.focus({preventScroll:true});}
+function mwMountAdminShortcut(){const bar=document.querySelector('.header-center');if(!bar||document.getElementById('mw-admin-shortcut'))return;const button=document.createElement('button');button.id='mw-admin-shortcut';button.type='button';button.className='hero-btn secondary';button.textContent='Admin workflows';button.setAttribute('aria-controls','sec-admin-workflows');button.onclick=mwOpenAdminWorkflows;bar.appendChild(button);}
 function mwArrangeWorkspace(){
+ mwMountAdminShortcut();
  const main=document.getElementById('main-content'),legacy=main?.querySelector('.two-col');
  if(!legacy)return;
  document.body.classList.add('mw-modern');
