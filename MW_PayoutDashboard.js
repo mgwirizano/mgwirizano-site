@@ -15,20 +15,22 @@ function fpReadPolicy(action){return {read:['fp_funds','fp_admin_overview','fp_r
 function fpStableRead(value){return value instanceof Date?value.toISOString():Array.isArray(value)?value.map(fpStableRead):value&&typeof value==='object'?Object.keys(value).sort().reduce((out,key)=>(out[key]=fpStableRead(value[key]),out),{}):value;}
 function fpCopyRead(value){return JSON.parse(JSON.stringify(value));}
 async function fpCall(action,params={},options={}){const policy=fpReadPolicy(action),mutation=['fp_save','fp_review_apply','fp_review_resume','fp_admin_apply','fp_ops_stage_apply','fp_ops_notice_send'].includes(action);if(!policy.read){if(mutation)fpInvalidateReadCache();try{return await fpSendCall(action,params);}finally{if(mutation)fpInvalidateReadCache();}}const stable=JSON.stringify(fpStableRead(params)),key=action+'|'+stable,generation=fpReadGeneration,cached=fpDisplayCache.get(key);if(!options.fresh&&cached&&cached.expires>Date.now())return fpCopyRead(cached.data);const pendingKey=generation+'|'+key;if(fpReadPending.has(pendingKey))return fpCopyRead(await fpReadPending.get(pendingKey));const pending=fpSendCall(action,params);fpReadPending.set(pendingKey,pending);try{const data=await pending;if(policy.ttl&&generation===fpReadGeneration)fpDisplayCache.set(key,{expires:Date.now()+policy.ttl,data:fpCopyRead(data)});return fpCopyRead(data);}finally{if(fpReadPending.get(pendingKey)===pending)fpReadPending.delete(pendingKey);}}
+function fpReadOnlyAction(action){return fpReadPolicy(action).read||['fp_actions_check','fp_actions_credits','fp_actions_activity','fp_review_source','fp_admin_suggest','fp_admin_inspect','fp_ops_mail','fp_ops_zelle_check','fp_ops_service','fp_ops_service_preview','fp_review_preview','fp_admin_preview','fp_ops_notice_preview','fp_ops_stage_preview','fp_preview','fp_admin_status','fp_version','fp_balance'].includes(action);}
+function fpRequestBudget(action){return !fpReadOnlyAction(action)?120000:['fp_admin_inspect','fp_ops_mail','fp_ops_zelle_check','fp_ops_service_preview','fp_admin_preview','fp_review_preview'].includes(action)?60000:30000;}
 async function fpSendCall(action,params={}){
-  const progress=typeof mwRequestFeedbackBegin==='function'?mwRequestFeedbackBegin(action,params):null;
-  try{
-  const response=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({...params,action}),redirect:'follow'});
-  const data=await response.json();
-  if(data.status!=='ok'){const rejected=Error(/Unknown payout action/i.test(data.message||'')?'Unknown payout action — the deployed Apps Script is older than the website. Replace the updated addon scripts, including MW_Dashboard_Payouts and MW_Dashboard_Admin, then deploy a new version of the SAME web app.':(data.message||'Could not reach the payout service.'));rejected.serverRejected=true;throw rejected;}
+ const progress=typeof mwRequestFeedbackBegin==='function'?mwRequestFeedbackBegin(action,params):null,readOnly=fpReadOnlyAction(action),controller=readOnly&&typeof AbortController!=='undefined'?new AbortController():null;let deadline;
+ try{
+  const request={method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({...params,action}),redirect:'follow'};if(controller)request.signal=controller.signal;
+  const work=fetch(SCRIPT_URL,request).then(response=>response.json()),timeout=new Promise((_,reject)=>{deadline=setTimeout(()=>{const error=Error(readOnly?'This read took too long. You can keep using the dashboard and retry this view, or choose a smaller date range. No record-changing action was submitted by this request.':'Completion was not confirmed. The server may still be processing this action. Keep its request reference and verify the outcome before submitting again.');error.readTimedOut=readOnly;error.outcomeUnknown=!readOnly;reject(error);if(controller)controller.abort();},fpRequestBudget(action));});
+  const data=await Promise.race([work,timeout]);
+  if(data.status!=='ok'){const rejected=Error(/Unknown payout action/i.test(data.message||'')?'Unknown payout action — update the matching Apps Script addons and deploy a new version of the SAME web app.':(data.message||'Could not reach the dashboard service.'));rejected.serverRejected=true;throw rejected;}
   if(action==='fp_funds'&&!Array.isArray(data.funds))throw Error('Install the payout backend and POST dispatch line, then redeploy Apps Script.');
   if(['fp_save','fp_review_apply','fp_review_resume','fp_admin_apply','fp_ops_stage_apply','fp_ops_notice_send'].includes(action)&&typeof mwMemberCache!=='undefined')mwMemberCache.clear();
-  if(typeof mwRequestFeedbackEnd==='function')mwRequestFeedbackEnd(progress,data);
-  return data;
-  }catch(error){if(typeof mwRequestFeedbackEnd==='function')mwRequestFeedbackEnd(progress,null,error);throw error;}
+  if(typeof mwRequestFeedbackEnd==='function')mwRequestFeedbackEnd(progress,data);return data;
+ }catch(error){if(typeof mwRequestFeedbackEnd==='function')mwRequestFeedbackEnd(progress,null,error);throw error;}finally{if(deadline)clearTimeout(deadline);}
 }
 async function fpLoadFunds(){
-  if(fpBusy)return;fpBusy=true;ftBusy=true;fpStatus('Loading funds…');
+  if(fpBusy)return;fpBusy=true;fpStatus('Loading funds…');
   try{
     const d=await fpCall('fp_funds'),sel=document.getElementById('fp-fund'),current=sel.value;
     sel.replaceChildren(new Option('No fund / organization payment',''));
@@ -36,16 +38,16 @@ async function fpLoadFunds(){
     d.funds.forEach(f=>sel.add(new Option(`${f.code} — ${f.deceased} (${f.status})`,f.code)));
     if(current)sel.value=current;
     fpStatus('Select a fund to view its balance. No records changed.');
-  }catch(e){fpStatus(e.message,true);}finally{fpBusy=false;ftBusy=false;}
+  }catch(e){fpStatus(e.message,true);}finally{fpBusy=false;}
 }
 async function fpLoadBalance(){
   fpInvalidate();fpSummary=null;
   const code=document.getElementById('fp-fund').value;
   document.getElementById('fp-summary').replaceChildren();
   if(!code){fpStatus('Select a fund for its balance; organization payments can be recorded without one.');return;}
-  if(fpBusy)return;fpBusy=true;ftBusy=true;fpStatus('Reading recorded balances and payout history…');
+  if(fpBusy)return;fpBusy=true;fpStatus('Reading recorded balances and payout history…');
   try{fpSummary=await fpCall('fp_balance',{fundCode:code});fpRender();fpStatus('Read-only balance loaded. No records changed.');if(typeof mwFundRoster==='function')await mwFundRoster(code,'fp-fund-roster');}
-  catch(e){fpStatus(e.message,true);}finally{fpBusy=false;ftBusy=false;}
+  catch(e){fpStatus(e.message,true);}finally{fpBusy=false;}
 }
 function fpRender(){
   const d=fpSummary,el=document.getElementById('fp-summary');if(!d||!el)return;
@@ -184,7 +186,7 @@ function mwArrangeWorkspace(){
   const previousBusy=isFixToolBusy;
   isFixToolBusy=function(){
     const panel=document.getElementById('sec-family-payouts');
-    return fpBusy || !!fpPreview || !!(panel && panel.contains(document.activeElement)) ||
+    return !!fpPreview || !!(panel && panel.contains(document.activeElement)) ||
       !!(panel && Array.from(panel.querySelectorAll('input')).some(x=>x.type!=='checkbox' && x.value)) || previousBusy();
   };
   function mount(){
