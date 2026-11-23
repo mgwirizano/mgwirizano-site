@@ -17,4 +17,8 @@ function example(){const e=env();e.data.MEMBERS[2][16]='MW0323';e.data.MEMBERS[2
 {
  const e=example();e.data.PAYMENTS[12][9]='No 323 fund 008 to 012';const p=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert(!p.canFill);assert(p.blocks.some(b=>b.includes('FUND-012')));assert.equal(e.writes(),0);
 }
+{
+ const e=env();e.data.PAYMENTS[12][3]=10;e.data.PAYMENTS[12][9]='MW0083 fund 009';e.data.PAYMENTS[11][8]='MANUAL ENTRY';e.data.PAYMENTS[11][13]='Scanner missed';const p=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert.equal(p.existingManual.rows.length,1);assert.equal(p.existingManual.rows[0].row,12);assert(p.existingManual.canPrepareLink);assert(!p.canPreview);assert.equal(e.writes(),0);assert.equal(e.emails(),0);
+ e.data.PAYMENTS[11][1]='MW0100';let q=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert.equal(q.existingManual.rows.length,0);e.data.PAYMENTS[11][1]='MW0083';e.data.PAYMENTS[11][13]='Source PAYMENTS row 999';q=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert.equal(q.existingManual.rows.length,0);e.data.PAYMENTS[11][13]='Scanner missed';e.data.PAYMENTS[11][3]=5;q=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert(!q.existingManual.canPrepareLink);assert.equal(q.existingManual.difference,5);assert.equal(e.writes(),0);
+}
 console.log('PASS: Victoria-style bare member number + four-fund range fills verified $15 balances and produces a zero-write dry run; source mismatch never invents credit/split; explicit amounts, multiple IDs and ambiguous surnames hold; stale/protected sources and inconsistent trackers prevent automatic preview.');
