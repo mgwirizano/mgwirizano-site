@@ -1,11 +1,12 @@
-# Validation — v4.3
+# Validation — v4.4
 
-17 synthetic test files passed. Eight Apps Script files and both website scripts also parsed successfully.
+18 synthetic test files passed, including all-fund Inspect and stale credit-suggestion protection. Eight Apps Script addons and both website scripts parse.
 
 - test-actions.cjs: PASS
 - test-admin.cjs: PASS
 - test-automation.cjs: PASS
 - test-claims.cjs: PASS
+- test-credit-inspection.cjs: PASS
 - test-group-memos.cjs: PASS
 - test-lifecycle.cjs: PASS
 - test-mobile.cjs: PASS
@@ -20,4 +21,4 @@
 - test-suggestions.cjs: PASS
 - test-zelle-check.cjs: PASS
 
-No production bank scan, email send, scheduled trigger installation, membership removal or financial edit was performed. Installed browser layout, Gmail routing/delivery and authorization remain to be checked in the target project.
+No production records, member emails, bank scans, trigger installations or removals ran. Live browser layout and Gmail delivery require an installation check.
