@@ -1,11 +1,12 @@
-# Validation — UI v4.5
+# Validation — website v4.6
 
-19 synthetic test files passed, including all-fund Inspect and stale credit-suggestion protection. Eight Apps Script addons and both website scripts parse.
+20 synthetic test files passed. Website scripts parse. Financial backend code is unchanged from v4.4.
 
 - test-actions.cjs: PASS
 - test-admin.cjs: PASS
 - test-automation.cjs: PASS
 - test-claims.cjs: PASS
+- test-compact-feedback.cjs: PASS
 - test-credit-inspection.cjs: PASS
 - test-group-memos.cjs: PASS
 - test-lifecycle.cjs: PASS
@@ -13,6 +14,7 @@
 - test-modern-layout.cjs: PASS
 - test-operations.cjs: PASS
 - test-payment-review.cjs: PASS
+- test-performance.cjs: PASS
 - test-report-progress.cjs: PASS
 - test-reports-ui.cjs: PASS
 - test-reports.cjs: PASS
@@ -21,6 +23,4 @@
 - test-suggestions.cjs: PASS
 - test-zelle-check.cjs: PASS
 
-No production records, member emails, bank scans, trigger installations or removals ran. Live browser layout and Gmail delivery require an installation check.
-
-- test-compact-feedback.cjs: PASS — callouts-only default, full details retained, six-second success timeout, hover/focus pause, persistent warnings and running-operation protection.
+Performance checks verify fewer redundant requests/scans; live browser timing was not measured. No production records, email, bank scans, jobs or deployments were changed.
