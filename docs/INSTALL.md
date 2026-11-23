@@ -79,3 +79,14 @@ If the register does not exist, the report says adjustment/settlement evidence i
 Embedded late fees are not invented from receipt amounts or outstanding assessments. Separately posted late-fee receipts are shown, and the difference between cash, applied credit and the existing tracker pool is exposed for allocation review. Pool assumptions/warnings remain visible in the fund breakdown and printed package. Admin retention is part of the core base, not another bank debit.
 
 CSV export follows the selected view and member/category filter. Board PDF prints the complete loaded report, including fund calculations and current owing members. Browser-generated PDF uses Print / save PDF; the existing confirmed quarterly document/email generator remains a separate explicit action. Dates and generated timestamps print with the report.
+
+
+## v4.1: Use payment suggestions
+
+The unmatched-payment drawer now shows **Use suggestions & preview** when a verified member/fund proposal exactly matches the received amount. Clicking it re-reads the source and balances, fills the allocation rows and starts the existing read-only dry run. **Confirm and apply** remains the deliberate financial action; the normal audit, stale-preview protection, source dismissal and member receipts are reused.
+
+A bare member number such as `No 323` can propose `MW0323` with the member's full name and an identity-verification label. Explicit `fund 008 to 011` references fill all four verified fund balances, including disclosed applicable late fees. This never copies an old scanner proposal from Notes. When balances total $60 for a $60 source, no typing is needed before preview/confirmation.
+
+A mismatch stays visible; there is no equal/proportional split or automatic excess credit. Multiple member candidates require choosing one, and explicit memo dollar amounts/multiple IDs leave amount fields for manual verification. Ambiguous surname references, unknown funds, missing member candidates and protected/already-posted sources cannot be filled automatically. Paid/exempt obligations are skipped. Inconsistent tracker balances leave the amount blank. Manual edits made while the recheck runs are preserved and require a retry. Filling fields does not post a payment, dismiss the source, or send an email.
+
+For an already-installed v4, replace **MW_Dashboard_Admin.gs**, deploy a new version of the same Apps Script web app, and replace **MW_PaymentReview.js** on the website. All other dashboard styling and report features are retained. For older installations, use the full package installation steps above first.
