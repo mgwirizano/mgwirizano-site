@@ -1,6 +1,6 @@
-# Mgwirizano dashboard v4.6
+# Mgwirizano dashboard v4.7
 
-**Already on v4.4? Replace MW_PayoutDashboard.js and MW_PaymentReview.js on the website and hard-refresh. No Apps Script redeployment is needed.** Read docs/PERFORMANCE_UPDATE.md. This includes the compact review and timed messages from v4.5.
+**Already on v4.4 or the v4.5/v4.6 website update? Replace MW_PayoutDashboard.js and MW_PaymentReview.js, then hard-refresh. No Apps Script redeployment is needed.** Read docs/NONBLOCKING_HOTFIX.md. Other dashboard/financial features are included.
 
 For a first installation or an older server, read **docs/AUTOMATION_AND_FIXES.md**.
 
