@@ -1,0 +1,20 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),{env}=require('./test-admin.cjs');
+function example(){const e=env();e.data.MEMBERS[2][16]='MW0323';e.data.MEMBERS[2][2]='Victoria Chilala Ligomeka';e.data.PAYMENTS[12][3]=60;e.data.PAYMENTS[12][9]='*Owing from fund 008 to 011 No 323 victoria chilala Ligomeka*';e.data.PAYMENTS[12][13]='Old scanner proposed a different member; not authoritative';for(const code of ['009','010','011']){e.data['TRACK-'+code][8][0]='MW0323';e.data.FUNDS.find(r=>r[0]==='FUND-'+code)[9]=new Date('2020-01-01');}const f=e.data.FUNDS[3].slice();f[0]='FUND-008';e.data.FUNDS.push(f);e.data['TRACK-008']=e.data['TRACK-011'].map(r=>r.slice());e.data['FUND-008']=e.data['FUND-011'].map(r=>r.slice());return e;}
+{
+ const e=example(),d=e.c._mwAdminSuggest_({sourceRow:13}),p=d.proposal;assert.equal(p.memberId,'MW0323');assert.equal(p.candidates[0].name,'Victoria Chilala Ligomeka');assert.equal(p.lines.length,4);assert(p.lines.every(a=>a.amount===15));assert.equal(p.verifiedTotal,60);assert.equal(p.difference,0);assert(p.canPreview);assert(p.lines.every(a=>a.lateFeePending));assert.equal(e.writes(),0);assert.equal(e.emails(),0);
+ const dry=e.c._mwPrPreview_({sourceRow:13,mode:'ALLOCATE',requestId:'suggestions-dry-run-12345',allocations:p.lines.map(a=>({memberId:a.memberId,fundCode:a.fundCode,amount:String(a.amount)}))},'test');assert.equal(dry.plan.allocations.length,4);assert.equal(e.writes(),0);assert.equal(e.emails(),0);assert.equal(e.data.PAYMENTS[12][10],'UNMATCHED');
+ e.data.PAYMENTS[12][3]=65;let changed=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert(changed.canFill);assert(!changed.canPreview);assert.equal(changed.difference,5);assert(!changed.lines.some(a=>a.fundCode==='CREDIT'));e.data.PAYMENTS[12][3]=50;changed=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert(!changed.canPreview);assert.equal(changed.difference,-10);assert(changed.lines.every(a=>a.amount===15)); // no equal or proportional split
+}
+{
+ const e=example();e.data.PAYMENTS[12][9]='MW0323 fund 008 to 011 $10 each';let p=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert(p.canFill);assert(!p.canPreview);assert(p.lines.every(a=>a.amount===null));assert.throws(()=>e.c._mwAdminSuggest_({sourceRow:13,suggestedMemberId:'MW0083'}),/not one of these/);e.data.PAYMENTS[12][10]='DISMISSED';p=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert(!p.canFill);assert(!p.canPreview);assert.equal(e.writes(),0);
+}
+{
+ const e=example();e.data.PAYMENTS[12][9]='MW0083 MW0323 fund 011';let p=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert(!p.canFill);assert.equal(p.candidates.length,2);p=e.c._mwAdminSuggest_({sourceRow:13,suggestedMemberId:'MW0323'}).proposal;assert(p.canFill);assert(p.lines.every(a=>a.amount===null));assert(!p.canPreview);e.data.PAYMENTS[12][9]='No 323 Chimphonda';e.data.FUNDS[1][2]='George Chimphonda';e.data.FUNDS[2][2]='Another Chimphonda';p=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert(!p.canFill);assert(p.blocks.some(x=>/ambiguous/.test(x)));assert.equal(e.writes(),0);assert.equal(e.emails(),0);
+}
+{
+ const e=example();e.data['TRACK-011'][8][5]=5;e.c.MWPR_READ_CACHE={};const p=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert(p.lines.some(a=>a.fundCode==='FUND-011'&&a.amount===null));assert(!p.canPreview);assert.equal(e.writes(),0);
+}
+{
+ const e=example();e.data.PAYMENTS[12][9]='No 323 fund 008 to 012';const p=e.c._mwAdminSuggest_({sourceRow:13}).proposal;assert(!p.canFill);assert(p.blocks.some(b=>b.includes('FUND-012')));assert.equal(e.writes(),0);
+}
+console.log('PASS: Victoria-style bare member number + four-fund range fills verified $15 balances and produces a zero-write dry run; source mismatch never invents credit/split; explicit amounts, multiple IDs and ambiguous surnames hold; stale/protected sources and inconsistent trackers prevent automatic preview.');
