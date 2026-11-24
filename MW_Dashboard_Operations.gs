@@ -143,7 +143,16 @@ function _mwOpsNotifiedBalance_(id,review,context){
  if(codes.indexOf('REG')>=0){if(codes.length!==1)throw Error('Mixed notice types need manual review');var registration=context?(context.registration||(context.registration=_mwActRegistration_({},context.ledger))):_mwActRegistration_({});var m=registration.members.filter(function(x){return x.id===id;})[0];if(!m||m.regStatus==='REVIEW')throw Error('Registration balance needs verification');return {total:m.regBalance,kind:'REGISTRATION'};}
  var ledger=context&&context.ledger||_mwPrLedger_(),total=0;codes.forEach(function(code){var o=_mwPrObligation_(id,code,ledger);if(o.status==='REVIEW'||o.balance===null)throw Error(code+': balance needs verification');total+=Number(o.balance||0);});return {total:Math.round(total*100)/100,kind:'FUNDS'};
 }
+// Same original four-fund / original-warning-deadline decisions, evaluated against
+// one request-local read snapshot. No cross-request cache and no write methods.
 function _mwOpsAlerts_(){
+ var previous=MWPR_SS,previousCache=MWPR_READ_CACHE,live=_mwPrSS_(),sheets=live.getSheets(),byName={},tz=live.getSpreadsheetTimeZone();
+ sheets.forEach(function(sheet){var name=sheet.getName(),values;byName[name]={getName:function(){return name;},getDataRange:function(){return {getValues:function(){return values||(values=sheet.getDataRange().getValues());}};}};});
+ MWPR_SS={getSheetByName:function(name){return byName[name]||null;},getSheets:function(){return Object.keys(byName).map(function(name){return byName[name];});},getSpreadsheetTimeZone:function(){return tz;}};
+ MWPR_READ_CACHE={};
+ try{return _mwOpsAlertsRead_();}finally{MWPR_SS=previous;MWPR_READ_CACHE=previousCache;}
+}
+function _mwOpsAlertsRead_(){
  var context={ledger:_mwPrLedger_(),funds:_mwFpFunds_(),index:_mwOpsReviewIndex_()},funds=_mwOpsNoticeList_(context),reg=_mwOpsRegistrationList_(context),index=context.index,rows=[],seen={},today=_mwOpsToday_();
  funds.members.concat(reg.members).forEach(function(m){if(seen[m.memberId])return;seen[m.memberId]=true;rows.push({memberId:m.memberId,name:m.name,state:m.canSend?'WARNING NEEDED':'REVIEW NEEDED',kind:m.obligations[0].fundCode==='REG'?'REGISTRATION':'FUNDS',missed:m.missed,total:m.total,reason:m.blocked.join('; ')});});
  Object.keys(index).forEach(function(id){var r=index[id];if(r.sendStatus!=='SENT'||r.decision!=='PROCEED'||!(r.values[11] instanceof Date))return;try{_mwPrMember_(id);var b=_mwOpsNotifiedBalance_(id,r,context),deadline=_mwOpsDay_(r.values[7]);if(!deadline)throw Error('Notice deadline missing');var alert={memberId:id,name:String(r.values[2]),state:b.total<=0?'RESOLVED':deadline<today?'REMOVAL REVIEW NEEDED':'AWAITING RESPONSE',kind:b.kind,total:b.total,deadline:deadline,reason:'Only the obligations in the original sent warning are checked.'};rows=rows.filter(function(x){return x.memberId!==id;});rows.push(alert);}catch(err){rows=rows.filter(function(x){return x.memberId!==id;});rows.push({memberId:id,name:String(r.values[2]),state:'REVIEW NEEDED',reason:err.message});}});
