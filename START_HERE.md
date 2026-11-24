@@ -1,14 +1,5 @@
-# Mgwirizano dashboard v4.8
+# Mgwirizano dashboard v4.9
 
-**Update two Apps Script files (MW_Dashboard_Operations.gs and MW_Dashboard_Actions.gs), deploy a new version of the same web app, then replace both website scripts and hard-refresh.** This fixes the expensive alert calculation and adds the top Admin workflows button. See docs/ALERTS_AND_ADMIN_UPDATE.md.
+From v4.8 replace MW_Dashboard_Operations.gs in Apps Script, update the existing web-app deployment to a new version, then replace website MW_PaymentReview.js and hard-refresh. The same web-app URL stays in place.
 
-
-For a first installation or an older server, read **docs/AUTOMATION_AND_FIXES.md**.
-
-This is the complete addon update: eight Apps Script files and two website scripts, including Financial reports, running/completion messages, repeated-report protection, smarter group allocations, Zelle checks and the optional member-response/payment-follow-up assistant.
-
-Replace the seven existing addon files, add MW_Dashboard_Automation.gs, replace both website JavaScript files and deploy a new version of the SAME Apps Script web app. Keep the existing main bridge, doGet, doPost hook and script tags.
-
-The follow-up assistant starts DISABLED. Enable individual email switches only after reviewing the settings and acknowledgment example in Contributions & review → Action needed. Setup itself sends no messages. No production changes or emails were run while preparing this package.
-
-See docs/INSTALL.md for previous workflow dependencies and the separate original-registration-handler limitation. Tests are synthetic and can run with Node.js from this package.
+Read docs/ALERTS_AND_COLORS_UPDATE.md for the reproduced alert bottleneck, evidence, and limitations. Full installation guidance remains in docs/INSTALL.md. Financial reports and all prior addons are included. No live changes have been applied by this package.
