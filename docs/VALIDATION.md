@@ -26,3 +26,7 @@
 - test-zelle-check.cjs: PASS
 
 No live deployment, financial edits, emails, bank scans, triggers or removals ran. Synthetic work counts are not live timing measurements.
+
+
+## v4.9
+23 synthetic test files pass. New 4,000-payment fixture verifies identical v4.8 alert output, timezone calls 4,009 → 7, request state restored after success/error, and zero sheet writes/emails. Original alert decision and 40-notice tests remain passing. Existing layout and JavaScript syntax checks pass; live deployment and browser colors are not verified.
